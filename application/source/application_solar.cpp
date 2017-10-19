@@ -31,7 +31,8 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 
 void ApplicationSolar::renderPlanet(std::shared_ptr<planet> planet) const
 {
-  // rotate planet around origin
+  // rotate planet around origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
+  // rotate the matrix by an angle (here by time) by an axis vector
   glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime()), planet->rotationDir);
 
   // translate planet position

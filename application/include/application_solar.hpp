@@ -5,8 +5,9 @@
 #include "model.hpp"
 #include "structs.hpp"
 
-#include <deque>
-#include <memory> // include to use shared_ptr
+// added for assignment 1
+#include <deque> // holding pointers to the planet objects
+#include <memory> // included to use shared pointers (std::shared_ptr)
 
 
 // gpu representation of model
@@ -49,7 +50,10 @@ class ApplicationSolar : public Application
   // deque holding pointers for the planet objects
   std::deque<std::shared_ptr<planet>> planets;
 
-  bool moveForward, moveBackward, moveLeft, moveRight;
+  bool moveForward = false,
+	   moveBackward = false,
+	   moveLeft = false,
+	   moveRight = false;
 };
 
 #endif
