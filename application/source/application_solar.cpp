@@ -59,7 +59,7 @@ void ApplicationSolar::render() const
   // bind shader to upload the following uniforms
   glUseProgram(m_shaders.at("planet").handle);
 
-  for (uint i = 0; i < planets.size(); i++)
+  for (int i = 0; i < planets.size(); i++)
   { renderPlanet(planets.at(i)); }
 }
 
