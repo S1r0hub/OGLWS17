@@ -8,52 +8,62 @@
 // added for assignment 1
 #include <deque> // holding pointers to the planet objects
 #include <memory> // included to use shared pointers (std::shared_ptr)
+#include "Planet.hpp"
 
 
 // gpu representation of model
 class ApplicationSolar : public Application
 {
- public:
-  // allocate and initialize objects
-  ApplicationSolar(std::string const& resource_path);
-  // free allocated objects
-  ~ApplicationSolar();
+  public:
 
-  // update uniform locations and values
-  void uploadUniforms();
+    // allocate and initialize objects
+    ApplicationSolar(std::string const& resource_path);
+    // free allocated objects
+    ~ApplicationSolar();
 
-  // update projection matrix
-  void updateProjection();
+    // update uniform locations and values
+    void uploadUniforms();
 
-  // react to key input
-  void keyCallback(int key, int scancode, int action, int mods);
+    // update projection matrix
+    void updateProjection();
 
-  //handle delta mouse movement input
-  void mouseCallback(double pos_x, double pos_y);
+    // react to key input
+    void keyCallback(int key, int scancode, int action, int mods);
 
-  // draw all objects
-  void render() const;
+    //handle delta mouse movement input
+    void mouseCallback(double pos_x, double pos_y);
 
-  // upload planet information
-  void renderPlanet(std::shared_ptr<planet> planet) const;
+    // draw all objects
+    void render() const;
 
- protected:
-  void initializeShaderPrograms();
-  void initializeGeometry();
-  void initializePlanets();
-  void updateView();
-  void move();
+    // upload planet information
+    void renderPlanet(std::shared_ptr<Planet> planet) const;
 
-  // cpu representation of model
-  model_object planet_object;
 
-  // deque holding pointers for the planet objects
-  std::deque<std::shared_ptr<planet>> planets;
+  protected:
 
-  bool moveForward = false,
-	   moveBackward = false,
-	   moveLeft = false,
-	   moveRight = false;
+    void initializeShaderPrograms();
+    void initializeGeometry();
+    void initializePlanets();
+    void updateView();
+    void move();
+
+    // cpu representation of model
+    model_object planet_object;
+
+    // simulation speed used by planets (1 = real time)
+    float time_multiplier = 100000.f;
+
+    // deque holding pointers for the planet objects
+    std::deque<std::shared_ptr<Planet>> planets;
+
+    // holding movement information
+    bool moveForward = false,
+	       moveBackward = false,
+	       moveLeft = false,
+	       moveRight = false,
+         moveUp = false,
+         moveDown = false;
 };
 
 #endif

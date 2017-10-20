@@ -4,9 +4,6 @@
 #include <map>
 #include <glbinding/gl/gl.h>
 
-#include <string> // included to use std::string for planet names
-#include <glm/glm.hpp> // included for glm::vec3f (used by planets)
-
 
 // use gl definitions from glbinding 
 using namespace gl;
@@ -54,33 +51,6 @@ struct shader_program
   GLuint handle;
   // uniform locations mapped to name
   std::map<std::string, GLint> u_locs{};
-};
-
-
-// A struct holding information about a planet.
-struct planet
-{
-  // Constructors
-  planet(std::string name_) : name(name_) {}
-  planet(std::string name_, glm::fvec3 origin_, glm::fvec3 rotationDir_, glm::fvec3 translation_)
-    : name(name_),
-      origin(origin_),
-      rotationDir(rotationDir_),
-      translation(translation_)
-  {}
-
-  std::string name = "Unknown";
-
-  glm::fvec3 origin{0.0f, 0.0f, 0.0f};
-
-  // self rotation direction
-  glm::fvec3 rotationDir{0.0f, 1.0f, 0.0f};
-
-  // ...
-  glm::fvec3 translation{0.0f, 0.0f, 0.0f};
-
-  float size = 1.0f;
-  float rotationSpeed = 1.0f;
 };
 
 #endif

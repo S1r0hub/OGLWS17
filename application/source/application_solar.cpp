@@ -23,20 +23,34 @@ using namespace gl;
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
 {
+  // set default view
+  m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.f, 2.f, 15.f});
+
   initializeGeometry();
   initializeShaderPrograms();
   initializePlanets();
 }
 
 
-void ApplicationSolar::renderPlanet(std::shared_ptr<planet> planet) const
+void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 {
-  // rotate planet around origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
-  // rotate the matrix by an angle (here by time) by an axis vector
-  glm::fmat4 model_matrix = glm::rotate(glm::fmat4{}, float(glfwGetTime()), planet->rotationDir);
+  // set the origin of the planet (where it will rotate around)
+  glm::fmat4 model_matrix = glm::translate(glm::fmat4{}, planet->getOrigin());
 
-  // translate planet position
-  model_matrix = glm::translate(model_matrix, planet->translation);
+  // rotate planet around its origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
+  // (rotate the matrix by an angle (here by time) using an axis vector)
+  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getOrbitRotationAngle() * time_multiplier / 1000.f, planet->getRotationDir());
+
+  // translate the planet position after rotating it (changing its orbit)
+  model_matrix = glm::translate(model_matrix, planet->getOrbitTranslation());
+
+  // rotate the planet itself
+  // correct but bad because of the sun model:
+  //model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle() * time_multiplier, planet->getRotationDir());
+  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle() * time_multiplier / 1000.f, planet->getRotationDir());
+
+  // scale the planet
+  model_matrix = glm::scale(model_matrix, glm::fvec3(1.0f, 1.0f, 1.0f) * planet->getSize());
 
 
   // upload model matrix to shader
@@ -88,7 +102,7 @@ void ApplicationSolar::uploadUniforms()
   
   // bind new shader
   glUseProgram(m_shaders.at("planet").handle);
-  
+
   updateView();
   updateProjection();
 }
@@ -99,29 +113,34 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
 {
   // movement
   // actions: GLFW_PRESS, GLFW_REPEAT, GLFW_RELEASE
-  if (action == GLFW_PRESS)
+  if (action == GLFW_PRESS || action == GLFW_RELEASE)
   {
-    if (key == GLFW_KEY_W) { moveForward = true; }
-    else if (key == GLFW_KEY_S) { moveBackward = true; }
-    else if (key == GLFW_KEY_A) { moveLeft = true; }
-    else if (key == GLFW_KEY_D) { moveRight = true; }
-  }
-  else if (action == GLFW_RELEASE)
-  {
-    if (key == GLFW_KEY_W) { moveForward = false; }
-    else if (key == GLFW_KEY_S) { moveBackward = false; }
-    else if (key == GLFW_KEY_A) { moveLeft = false; }
-    else if (key == GLFW_KEY_D) { moveRight = false; }
+    bool active = false;
+
+    if (action == GLFW_PRESS) { active = true; }
+    else if (action == GLFW_RELEASE) { active = false; }
+
+    switch (key)
+    {
+      // keys for movement
+      case GLFW_KEY_W: moveForward = active; break;
+      case GLFW_KEY_S: moveBackward = active; break;
+      case GLFW_KEY_A: moveLeft = active; break;
+      case GLFW_KEY_D: moveRight = active; break;
+      case GLFW_KEY_SPACE: moveUp = active; break;
+      case GLFW_KEY_C: moveDown = active; break;
+    }
   }
 
   move();
 }
 
 
+// do the actual movement by using the coordinates and updating the view
 void ApplicationSolar::move()
 {
   glm::fvec3 movementVector{};
-  bool moving = moveForward || moveBackward || moveLeft || moveRight;
+  bool moving = moveForward || moveBackward || moveLeft || moveRight || moveUp || moveDown;
 
   if (moveForward)
   { movementVector += glm::fvec3{0.0f, 0.0f, -0.1f}; }
@@ -132,6 +151,11 @@ void ApplicationSolar::move()
   { movementVector += glm::fvec3{-0.1f, 0.0f, 0.0f}; }
   else if (moveRight)
   { movementVector += glm::fvec3{0.1f, 0.0f, 0.0f}; }
+
+  if (moveUp)
+  { movementVector += glm::fvec3{0.0f, 0.1f, 0.0f}; }
+  else if (moveDown)
+  { movementVector += glm::fvec3{0.0f, -0.1f, 0.0f}; }
 
   if (moving)
   {
@@ -145,7 +169,18 @@ void ApplicationSolar::move()
 //handle delta mouse movement input
 void ApplicationSolar::mouseCallback(double pos_x, double pos_y)
 {
-  // TODO: mouse handling
+  // left = pos_x = -1, right = pos_x = 1
+  // up = pos_y = -1, down = pos_y = 1
+
+  // TODO! https://msdn.microsoft.com/en-us/library/bb203907(v=xnagamestudio.10).aspx
+
+  m_view_transform = glm::rotate(m_view_transform, (float) (0.01f * -pos_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+
+  /*
+  m_view_transform = glm::rotate(m_view_transform, (float) (0.01f * pos_y), glm::fvec3{1.0f, 0.0f, 0.0f});
+  */
+  
+  updateView();
 }
 
 
@@ -166,7 +201,9 @@ void ApplicationSolar::initializeShaderPrograms()
 // load models
 void ApplicationSolar::initializeGeometry()
 {
-  model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+  //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
+  model planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
+  //model planet_model = model_loader::obj(m_resource_path + "models/test_cube.obj", model::NORMAL);
 
   // generate vertex array object
   glGenVertexArrays(1, &planet_object.vertex_AO); // = Array Object
@@ -212,8 +249,104 @@ void ApplicationSolar::initializeGeometry()
 // initialize all the different planet objects
 void ApplicationSolar::initializePlanets()
 {
-  planets.push_back(std::make_shared<planet>("Sonne"));
-  planets.push_back(std::make_shared<planet>("Erde", glm::fvec3{0.0f, 1.0f, 0.0f}, glm::fvec3{0.0f, 1.0f, 0.0f}, glm::fvec3{0.0f, 1.0f, -4.0f}));
+  if (!planets.empty()) { planets.clear(); }
+
+
+  // sizes according to this data: https://www.timeanddate.de/astronomie/planeten/groesse-reihenfolge
+
+  float system_scale = 100000;
+
+  // original data in km divided by system_scale = real representation of our solar system
+  // DONT DELETE!
+  float size_sun = 1391000.f / system_scale,
+        size_mercury = 4879.f / system_scale,
+        size_venus = 12104.f / system_scale,
+        size_earth = 12756.f / system_scale,
+        size_mars = 6792.f / system_scale,
+        size_jupiter = 142984.f / system_scale,
+        size_saturn = 120536.f / system_scale,
+        size_uranus = 51118.f / system_scale,
+        size_neptune = 49528.f / system_scale;
+
+  // fictional values for a nice and close to reality representation
+  /*
+  float size_sun = 4,
+        size_mercury = 0.2f,
+        size_venus = 0.5f,
+        size_earth = 0.5f,
+        size_mars = 0.3f,
+        size_jupiter = 1,
+        size_saturn = 1,
+        size_uranus = 0.7f,
+        size_neptune = 0.7f;
+  */
+
+  // distance from sun (first number is in million km thats why * 100000 at the end)
+  // following real distances dont work because the whole system would be too large to render then
+  // DONT DELETE!
+  /*
+  float dist_sun = 0 / system_scale,
+        dist_mercury = 68129 / system_scale * 100000,
+        dist_venus = 107559 / system_scale * 100000,
+        dist_earth = 148954 / system_scale * 100000,
+        dist_mars = 249126 / system_scale * 100000,
+        dist_jupiter = 814108 / system_scale * 100000,
+        dist_saturn = 1505417 / system_scale * 100000,
+        dist_uranus = 2978554 / system_scale * 100000,
+        dist_neptune = 4479866 / system_scale * 100000;
+  */
+
+  float dist_sun = 0,
+        dist_mercury = dist_sun + size_sun + size_mercury + 1,
+        dist_venus = dist_mercury + size_mercury + size_venus + 1,
+        dist_earth = dist_venus + size_venus + size_earth + 1,
+        dist_mars = dist_earth + size_earth + size_mars + 1,
+        dist_jupiter = dist_mars + size_mars + size_jupiter + 1,
+        dist_saturn = dist_jupiter + size_jupiter + size_saturn + 1,
+        dist_uranus = dist_saturn + size_saturn + size_uranus + 1,
+        dist_neptune = dist_uranus + size_uranus + size_neptune + 1;
+
+
+  // planet orbit speed https://de.wikipedia.org/wiki/Umlaufzeit
+  // and https://astrokramkiste.de/planeten-tabelle (also for day time)
+
+  // real orbit time of the planets (in days)
+  float ot_sun = 0, // is almost zero because of around 230 Mil. years
+        ot_mercury = 87.969f,
+        ot_venus = 224.701f,
+        ot_earth = 365.256f,
+        ot_mars = 686.980f,
+        ot_jupiter = 4329.6f,   // 11.862 years
+        ot_saturn = 10752.2f,   // 29.458 years
+        ot_uranus = 30665.1f,   // 84.014 years
+        ot_neptune = 60149.45f; // 164.793 years
+
+  // real day time of the planets (in days = 24 hours)
+  float dt_sun = 28, // between 25 days and 9 hours and 31 days and 19 hours
+        dt_mercury = 58.625f,  // 58 days and 15 hours
+        dt_venus = 243.f,      // 243 days
+        dt_earth = 1.f,
+        dt_mars = 1.02f,       // 1 day, 30 min
+        dt_jupiter = 0.42f,    // approx 10 h
+        dt_saturn = 0.45f,     // 10 h, 45 m
+        dt_uranus = 0.72f,     // 17 h, 15 m
+        dt_neptune = 0.67f;    // approx 16 h
+
+
+  // create and add all the planets to our list of planets
+  std::cout << "Sun has a size of " << size_sun << std::endl;
+  planets.push_back(std::make_shared<Planet>("Sun", size_sun, ot_sun, dt_sun));
+  planets.push_back(std::make_shared<Planet>("Mercury", size_mercury, ot_mercury, dt_mercury, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mercury}));
+  planets.push_back(std::make_shared<Planet>("Venus", size_venus, ot_venus, dt_venus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_venus}));
+  planets.push_back(std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_earth}));
+  // TODO: moon
+  planets.push_back(std::make_shared<Planet>("Mars", size_mars, ot_mars, dt_mars, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mars}));
+  planets.push_back(std::make_shared<Planet>("Jupiter", size_jupiter, ot_jupiter, dt_jupiter, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_jupiter}));
+  planets.push_back(std::make_shared<Planet>("Saturn", size_saturn, ot_saturn, dt_saturn, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_saturn}));
+  planets.push_back(std::make_shared<Planet>("Uranus", size_uranus, ot_uranus, dt_uranus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_uranus}));
+  planets.push_back(std::make_shared<Planet>("Neptun", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_neptune}));
+
+  std::cout << "Rotation angle for \"" << planets.at(0)->getName() << "\" per second is: " << planets.at(0)->getRotationAngle() << std::endl;
 }
 
 
