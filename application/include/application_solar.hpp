@@ -51,11 +51,18 @@ class ApplicationSolar : public Application
     // cpu representation of model
     model_object planet_object;
 
+
+  private:
+
     // simulation speed used by planets (1 = real time)
-    float time_multiplier = 100000.f;
+    // Yes, then the earth will need 365 days to travel one time around the sun.
+    double time_multiplier = 100000;
 
     // deque holding pointers for the planet objects
     std::deque<std::shared_ptr<Planet>> planets;
+
+    // definition of pi needed for rotation
+    float MATH_HALF_PI = glm::half_pi<float>();
 
     // holding movement information
     bool moveForward = false,
@@ -63,7 +70,23 @@ class ApplicationSolar : public Application
 	       moveLeft = false,
 	       moveRight = false,
          moveUp = false,
-         moveDown = false;
+         moveDown = false,
+         moveFast = false;
+
+    // how fast the camera is moving and rotating in general
+    float cameraSpeed = 0.1f;
+    float cameraRotationSpeed = 0.006f;
+
+    // store information about the camera rotation around the x-axis
+    float cameraRotationX = 0.f;
+    float cameraRotationX_max = MATH_HALF_PI;
+    float cameraRotationX_min = -MATH_HALF_PI;
+
+    // how many times faster the camera moves on sprinting
+    float cameraSprintMultiplier = 2.0f;
+
+    // store information about how the movement should be done
+    glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
 };
 
 #endif

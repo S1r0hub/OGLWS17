@@ -4,6 +4,7 @@
 
 #include <string> // included to use std::string for planet names
 #include <glm/glm.hpp> // included for glm::vec3f (used by planets)
+#include <glm/gtc/constants.hpp> // for constants like pi
 
 
 // A struct holding information about a planet.
@@ -28,16 +29,15 @@ class Planet
     // GETTER
 
     std::string getName();
+
     fv3 getOrigin();
     fv3 getRotationDir();
     fv3 getOrbitTranslation();
 
-    // divide this value by 1000 to get the angle per second
-    float getOrbitRotationAngle();
-
+    float getOrbitRotationAngle(double timeMultiplier);
     float getOrbitRotationTime();
     float getPlanetDayTime();
-    float getRotationAngle();
+    float getRotationAngle(double timeMultiplier);
     float getSize();
 
 
@@ -62,7 +62,7 @@ class Planet
     fv3 orbitTranslation{0.0f, 0.0f, 0.0f};
 
     // multiplied with time and affects orbit speed
-    float orbitRotationAngle = 1.0f;
+    double orbitRotationAngle = 1.0f;
 
     // time (in days) a planet needs to travel on its orbit around its origin
     float orbitRotationTime = 365;
@@ -71,10 +71,13 @@ class Planet
     float planetDayTime = 1;
 
     // affects how fast a planet rotates itself
-    float rotationAngle = 0.5f;
+    double rotationAngle = 0.5f;
 
     // size of the planet
     float size = 1.0f;
+
+    // definition of pi for rotation
+    float MATH_TWO_PI = glm::two_pi<float>();
 };
 
 #endif

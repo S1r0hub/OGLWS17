@@ -17,15 +17,15 @@ using namespace gl;
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// to print out a matrix or vector (debug related)
+#include <glm/gtx/string_cast.hpp>
+
 #include <iostream>
 
 
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
 {
-  // set default view
-  m_view_transform = glm::translate(m_view_transform, glm::fvec3{0.f, 2.f, 15.f});
-
   initializeGeometry();
   initializeShaderPrograms();
   initializePlanets();
@@ -39,7 +39,7 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 
   // rotate planet around its origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
   // (rotate the matrix by an angle (here by time) using an axis vector)
-  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getOrbitRotationAngle() * time_multiplier / 1000.f, planet->getRotationDir());
+  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getOrbitRotationAngle(time_multiplier), planet->getRotationDir());
 
   // translate the planet position after rotating it (changing its orbit)
   model_matrix = glm::translate(model_matrix, planet->getOrbitTranslation());
@@ -47,7 +47,7 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
   // rotate the planet itself
   // correct but bad because of the sun model:
   //model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle() * time_multiplier, planet->getRotationDir());
-  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle() * time_multiplier / 1000.f, planet->getRotationDir());
+  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle(time_multiplier), planet->getRotationDir());
 
   // scale the planet
   model_matrix = glm::scale(model_matrix, glm::fvec3(1.0f, 1.0f, 1.0f) * planet->getSize());
@@ -81,8 +81,21 @@ void ApplicationSolar::render() const
 
 void ApplicationSolar::updateView()
 {
+  // rotate the camera now also around the x-axis using the rotationVectorX
+  m_view_transform = glm::rotate(m_view_transform, cameraRotationX, glm::fvec3{1.0f, 0.0f, 0.0f});
+
+  // move the camera to the position it is aiming at depending on the movementVector
+  m_view_transform = glm::translate(m_view_transform, movementVector);
+
+  // reset movementVector now so that we do not always move when a view update occurs
+  movementVector = glm::fvec3{};
+
   // vertices are transformed in camera space, so camera transform must be inverted
   glm::fmat4 view_matrix = glm::inverse(m_view_transform);
+ 
+  // undo the matrix x-axis rotation to avoid weird camera behavoir next rotation (this will lock z-axis)
+  m_view_transform = glm::rotate(m_view_transform, -cameraRotationX, glm::fvec3{1.0f, 0.0f, 0.0f});
+
   // upload matrix to gpu
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
 }
@@ -129,6 +142,7 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
       case GLFW_KEY_D: moveRight = active; break;
       case GLFW_KEY_SPACE: moveUp = active; break;
       case GLFW_KEY_C: moveDown = active; break;
+      case GLFW_KEY_LEFT_SHIFT: moveFast = active; break;
     }
   }
 
@@ -139,27 +153,36 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
 // do the actual movement by using the coordinates and updating the view
 void ApplicationSolar::move()
 {
-  glm::fvec3 movementVector{};
+  // ensure that we even move in any direction
   bool moving = moveForward || moveBackward || moveLeft || moveRight || moveUp || moveDown;
-
-  if (moveForward)
-  { movementVector += glm::fvec3{0.0f, 0.0f, -0.1f}; }
-  else if (moveBackward)
-  { movementVector += glm::fvec3{0.0f, 0.0f, 0.1f}; }
-  
-  if (moveLeft)
-  { movementVector += glm::fvec3{-0.1f, 0.0f, 0.0f}; }
-  else if (moveRight)
-  { movementVector += glm::fvec3{0.1f, 0.0f, 0.0f}; }
-
-  if (moveUp)
-  { movementVector += glm::fvec3{0.0f, 0.1f, 0.0f}; }
-  else if (moveDown)
-  { movementVector += glm::fvec3{0.0f, -0.1f, 0.0f}; }
 
   if (moving)
   {
-    m_view_transform = glm::translate(m_view_transform, movementVector);
+    movementVector = glm::fvec3{};
+
+    // calculate the camera movement speed
+    float speed = cameraSpeed * (moveFast ? cameraSprintMultiplier : 1.f);
+
+    if (moveForward)
+    { movementVector += glm::fvec3{0.0f, 0.0f, -1.0f} * speed; }
+    else if (moveBackward)
+    { movementVector += glm::fvec3{0.0f, 0.0f, 1.0f} * speed; }
+  
+    if (moveLeft)
+    { movementVector += glm::fvec3{-1.0f, 0.0f, 0.0f} * speed; }
+    else if (moveRight)
+    { movementVector += glm::fvec3{1.0f, 0.0f, 0.0f} * speed; }
+
+    if (moveUp)
+    { movementVector += glm::fvec3{0.0f, 1.0f, 0.0f} * speed; }
+    else if (moveDown)
+    { movementVector += glm::fvec3{0.0f, -1.0f, 0.0f} * speed; }
+
+    // If we move on x and z at the same time
+    // the speed would be double as fast, so we have to divide in this case:
+    if (movementVector.x != 0 && movementVector.z != 0)
+    { movementVector *= glm::fvec3{0.5f, 0.5f, 1.0f}; }
+
     updateView();
   }
 }
@@ -172,14 +195,26 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y)
   // left = pos_x = -1, right = pos_x = 1
   // up = pos_y = -1, down = pos_y = 1
 
-  // TODO! https://msdn.microsoft.com/en-us/library/bb203907(v=xnagamestudio.10).aspx
 
-  m_view_transform = glm::rotate(m_view_transform, (float) (0.01f * -pos_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+  // Ensure the values are always -1 , 0 or 1
+  // because there was a weird high value after the first movement.
+  pos_x = pos_x > 1 ? 1 : pos_x < -1 ? -1 : pos_x;
+  pos_y = pos_y > 1 ? 1 : pos_y < -1 ? -1 : pos_y;
 
-  /*
-  m_view_transform = glm::rotate(m_view_transform, (float) (0.01f * pos_y), glm::fvec3{1.0f, 0.0f, 0.0f});
-  */
-  
+  // rotate the view around the y-axis (left and right)
+  m_view_transform = glm::rotate(m_view_transform, (float) (cameraRotationSpeed * -pos_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+
+  // store the rotation up and down and apply it in updateView()
+  float camRotXAdd = (float) (cameraRotationSpeed * -pos_y);
+
+  // ensure we only rotate 90 degree up and -90 degree down
+  // to avoid inverted camera rotation
+  if (cameraRotationX + camRotXAdd > cameraRotationX_max)
+  { cameraRotationX = cameraRotationX_max; }
+  else if (cameraRotationX + camRotXAdd < cameraRotationX_min)
+  { cameraRotationX = cameraRotationX_min; }
+  else { cameraRotationX += camRotXAdd; }
+
   updateView();
 }
 
@@ -204,6 +239,7 @@ void ApplicationSolar::initializeGeometry()
   //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
   model planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_cube.obj", model::NORMAL);
+  //model planet_model = model_loader::obj(m_resource_path + "models/test_monkey.obj", model::NORMAL);
 
   // generate vertex array object
   glGenVertexArrays(1, &planet_object.vertex_AO); // = Array Object
@@ -346,7 +382,7 @@ void ApplicationSolar::initializePlanets()
   planets.push_back(std::make_shared<Planet>("Uranus", size_uranus, ot_uranus, dt_uranus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_uranus}));
   planets.push_back(std::make_shared<Planet>("Neptun", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_neptune}));
 
-  std::cout << "Rotation angle for \"" << planets.at(0)->getName() << "\" per second is: " << planets.at(0)->getRotationAngle() << std::endl;
+  std::cout << "Rotation angle for \"" << planets.at(0)->getName() << "\" per second is: " << planets.at(0)->getRotationAngle(time_multiplier) << std::endl;
 }
 
 
