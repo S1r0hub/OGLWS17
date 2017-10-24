@@ -36,6 +36,18 @@ float Planet::getOrbitRotationTime() { return orbitRotationTime; }
 float Planet::getPlanetDayTime() { return planetDayTime; }
 float Planet::getSize() { return size; }
 
+std::deque<std::shared_ptr<Planet>>& Planet::getMoons()
+{ return moons; }
+
+int getMoonCount()
+{ return moons.size(); }
+
+
+// SETTER
+
+void Planet::addMoon(std::shared_ptr<Planet> moon)
+{ moons.push_back(moon); }
+
 
 
 // PRIVATE SETTER

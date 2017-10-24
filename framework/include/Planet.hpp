@@ -5,6 +5,8 @@
 #include <string> // included to use std::string for planet names
 #include <glm/glm.hpp> // included for glm::vec3f (used by planets)
 #include <glm/gtc/constants.hpp> // for constants like pi
+#include <deque>
+#include <memory>
 
 
 // A struct holding information about a planet.
@@ -26,6 +28,11 @@ class Planet
            glm::fvec3 rotationDir_ = glm::fvec3{0.0f, 1.0f, 0.0f});
 
 
+    // SETTER
+
+    void addMoon(std::shared_ptr<Planet> moon);
+
+
     // GETTER
 
     std::string getName();
@@ -39,6 +46,9 @@ class Planet
     float getPlanetDayTime();
     float getRotationAngle(double timeMultiplier);
     float getSize();
+
+    std::deque<std::shared_ptr<Planet>>& getMoons();
+    int getMoonCount();
 
 
   private:
@@ -78,6 +88,9 @@ class Planet
 
     // definition of pi for rotation
     float MATH_TWO_PI = glm::two_pi<float>();
+
+    // holds all the moons
+    std::deque<std::shared_ptr<Planet>> moons{};
 };
 
 #endif

@@ -44,6 +44,13 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
   // translate the planet position after rotating it (changing its orbit)
   model_matrix = glm::translate(model_matrix, planet->getOrbitTranslation());
 
+  // render moons
+  for (int i = 0; i < planet->getMoonCount(); i++)
+  {
+    // TODO!
+  }
+
+
   // rotate the planet itself
   // correct but bad because of the sun model:
   //model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getRotationAngle() * time_multiplier, planet->getRotationDir());
