@@ -1,10 +1,17 @@
+// APPLICATION SOLAR - Planet Header
+// COMPUTER GRAPHICS WiSe 17/18 - Assignments
+// Leon H. (115853)
+// Marcel H. (116610)
+
+
 #ifndef SOLARSYS_PLANET_HPP
 #define SOLARSYS_PLANET_HPP
 
-
+#include <iostream>
 #include <string> // included to use std::string for planet names
 #include <glm/glm.hpp> // included for glm::vec3f (used by planets)
 #include <glm/gtc/constants.hpp> // for constants like pi
+#include <glm/gtx/transform.hpp> // for glm::translate, rotate...
 #include <deque>
 #include <memory>
 
@@ -31,6 +38,7 @@ class Planet
     // SETTER
 
     void addMoon(std::shared_ptr<Planet> moon);
+    void setModelMatrix(glm::fmat4& modelMatrix);
 
 
     // GETTER
@@ -49,6 +57,8 @@ class Planet
 
     std::deque<std::shared_ptr<Planet>>& getMoons();
     int getMoonCount();
+
+    glm::fmat4 getModelMatrix();
 
 
   private:
@@ -91,6 +101,9 @@ class Planet
 
     // holds all the moons
     std::deque<std::shared_ptr<Planet>> moons{};
+
+	  // model matrix containing position and rotation...
+	  glm::fmat4 model_matrix{};
 };
 
 #endif

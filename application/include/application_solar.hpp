@@ -1,6 +1,13 @@
+// APPLICATION SOLAR - Header
+// COMPUTER GRAPHICS WiSe 17/18 - Assignments
+// Leon H. (115853)
+// Marcel H. (116610)
+
+
 #ifndef APPLICATION_SOLAR_HPP
 #define APPLICATION_SOLAR_HPP
 
+#include <iostream>
 #include "application.hpp"
 #include "model.hpp"
 #include "structs.hpp"
@@ -54,9 +61,8 @@ class ApplicationSolar : public Application
 
   private:
 
-    // simulation speed used by planets (1 = real time)
-    // Yes, then the earth will need 365 days to travel one time around the sun.
-    double time_multiplier = 100000;
+    // simulation speed used by planets (1 = real time) (use around 1 million)
+    double time_multiplier = 1000000;
 
     // deque holding pointers for the planet objects
     std::deque<std::shared_ptr<Planet>> planets;
@@ -75,7 +81,7 @@ class ApplicationSolar : public Application
 
     // how fast the camera is moving and rotating in general
     float cameraSpeed = 0.1f;
-    float cameraRotationSpeed = 0.006f;
+    float cameraRotationSpeed = 0.01f;
 
     // store information about the camera rotation around the x-axis
     float cameraRotationX = 0.f;

@@ -1,3 +1,9 @@
+// APPLICATION SOLAR - Source
+// COMPUTER GRAPHICS WiSe 17/18 - Assignments
+// Leon H. (115853)
+// Marcel H. (116610)
+
+
 #include "application_solar.hpp"
 #include "launcher.hpp"
 
@@ -17,11 +23,6 @@ using namespace gl;
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// to print out a matrix or vector (debug related)
-#include <glm/gtx/string_cast.hpp>
-
-#include <iostream>
-
 
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
@@ -34,8 +35,8 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 
 void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 {
-  // set the origin of the planet (where it will rotate around)
-  glm::fmat4 model_matrix = glm::translate(glm::fmat4{}, planet->getOrigin());
+	// set the origin of the planet (where it will rotate around)
+  glm::fmat4 model_matrix = planet->getModelMatrix();
 
   // rotate planet around its origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
   // (rotate the matrix by an angle (here by time) using an axis vector)
@@ -44,12 +45,16 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
   // translate the planet position after rotating it (changing its orbit)
   model_matrix = glm::translate(model_matrix, planet->getOrbitTranslation());
 
-  // render moons
-  for (int i = 0; i < planet->getMoonCount(); i++)
+  // render the moons of the planet
+  std::deque<std::shared_ptr<Planet>> moons = planet->getMoons();
+  std::shared_ptr<Planet> moon;
+  for (unsigned int i = 0; i < moons.size(); i++)
   {
-    // TODO!
+    moon = moons.at(i);
+    // use the current model matrix of the origin planet (transformed to position)
+    moon->setModelMatrix(model_matrix);
+    renderPlanet(moon);
   }
-
 
   // rotate the planet itself
   // correct but bad because of the sun model:
@@ -81,7 +86,7 @@ void ApplicationSolar::render() const
   // bind shader to upload the following uniforms
   glUseProgram(m_shaders.at("planet").handle);
 
-  for (int i = 0; i < planets.size(); i++)
+  for (unsigned int i = 0; i < planets.size(); i++)
   { renderPlanet(planets.at(i)); }
 }
 
@@ -311,6 +316,10 @@ void ApplicationSolar::initializePlanets()
         size_uranus = 51118.f / system_scale,
         size_neptune = 49528.f / system_scale;
 
+  // diameter of moons (in km)
+  float size_m_earth = 3476.f / system_scale;
+
+
   // fictional values for a nice and close to reality representation
   /*
   float size_sun = 4,
@@ -324,21 +333,29 @@ void ApplicationSolar::initializePlanets()
         size_neptune = 0.7f;
   */
 
-  // distance from sun (first number is in million km thats why * 100000 at the end)
+
+  // distance from sun (in km)
   // following real distances dont work because the whole system would be too large to render then
   // DONT DELETE!
+
   /*
-  float dist_sun = 0 / system_scale,
-        dist_mercury = 68129 / system_scale * 100000,
-        dist_venus = 107559 / system_scale * 100000,
-        dist_earth = 148954 / system_scale * 100000,
-        dist_mars = 249126 / system_scale * 100000,
-        dist_jupiter = 814108 / system_scale * 100000,
-        dist_saturn = 1505417 / system_scale * 100000,
-        dist_uranus = 2978554 / system_scale * 100000,
-        dist_neptune = 4479866 / system_scale * 100000;
+  float system_scale_distance = 1000000;
+
+  float dist_sun = 0 / system_scale_distance,
+        dist_mercury = 69312000 / system_scale_distance,
+        dist_venus = 107602000 / system_scale_distance,
+        dist_earth = 148783000 / system_scale_distance,
+        dist_mars = 249037000 / system_scale_distance,
+        dist_jupiter = 814035000 / system_scale_distance,
+        dist_saturn = 1505417000 / system_scale_distance,
+        dist_uranus = 2978554000 / system_scale_distance,
+        dist_neptune = 4479866000 / system_scale_distance;
+ 
+  float dist_m_earth = 384400 / system_scale_distance;
   */
 
+
+  // fictional distance values for the planets and moons
   float dist_sun = 0,
         dist_mercury = dist_sun + size_sun + size_mercury + 1,
         dist_venus = dist_mercury + size_mercury + size_venus + 1,
@@ -348,6 +365,9 @@ void ApplicationSolar::initializePlanets()
         dist_saturn = dist_jupiter + size_jupiter + size_saturn + 1,
         dist_uranus = dist_saturn + size_saturn + size_uranus + 1,
         dist_neptune = dist_uranus + size_uranus + size_neptune + 1;
+
+  float dist_m_earth = size_earth * 2.f;
+
 
 
   // planet orbit speed https://de.wikipedia.org/wiki/Umlaufzeit
@@ -364,6 +384,10 @@ void ApplicationSolar::initializePlanets()
         ot_uranus = 30665.1f,   // 84.014 years
         ot_neptune = 60149.45f; // 164.793 years
 
+  // real orbit time for moons
+  float ot_m_earth = 27.3f;
+
+
   // real day time of the planets (in days = 24 hours)
   float dt_sun = 28, // between 25 days and 9 hours and 31 days and 19 hours
         dt_mercury = 58.625f,  // 58 days and 15 hours
@@ -375,14 +399,21 @@ void ApplicationSolar::initializePlanets()
         dt_uranus = 0.72f,     // 17 h, 15 m
         dt_neptune = 0.67f;    // approx 16 h
 
+  // real day time of moons (in days)
+  float dt_m_earth = 0; // it's actually 27.3 (same as orbit time), 0 does the same in this case
+
 
   // create and add all the planets to our list of planets
   std::cout << "Sun has a size of " << size_sun << std::endl;
   planets.push_back(std::make_shared<Planet>("Sun", size_sun, ot_sun, dt_sun));
   planets.push_back(std::make_shared<Planet>("Mercury", size_mercury, ot_mercury, dt_mercury, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mercury}));
   planets.push_back(std::make_shared<Planet>("Venus", size_venus, ot_venus, dt_venus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_venus}));
-  planets.push_back(std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_earth}));
-  // TODO: moon
+  
+  std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_earth});
+  std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_m_earth});
+  earth->addMoon(moon1);
+  planets.push_back(earth);
+
   planets.push_back(std::make_shared<Planet>("Mars", size_mars, ot_mars, dt_mars, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mars}));
   planets.push_back(std::make_shared<Planet>("Jupiter", size_jupiter, ot_jupiter, dt_jupiter, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_jupiter}));
   planets.push_back(std::make_shared<Planet>("Saturn", size_saturn, ot_saturn, dt_saturn, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_saturn}));

@@ -1,4 +1,6 @@
 build
+build_linux
+build_windows
 install
 *.o
 *.sublime-workspace

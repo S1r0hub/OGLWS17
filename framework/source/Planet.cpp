@@ -1,3 +1,9 @@
+// APPLICATION SOLAR - Planet Source
+// COMPUTER GRAPHICS WiSe 17/18 - Assignments
+// Leon H. (115853)
+// Marcel H. (116610)
+
+
 #include "Planet.hpp"
 
 
@@ -12,6 +18,9 @@ Planet::Planet(std::string name_, float planetSize, float orbitRotationTime_, fl
       orbitTranslation(orbitTranslation),
       rotationDir(rotationDir_)
 {
+  // translate to origin
+  model_matrix = glm::translate(model_matrix, getOrigin());
+
   refreshOrbitRotationAngle();
   refreshSelfRotationAngle();
 }
@@ -39,14 +48,21 @@ float Planet::getSize() { return size; }
 std::deque<std::shared_ptr<Planet>>& Planet::getMoons()
 { return moons; }
 
-int getMoonCount()
+int Planet::getMoonCount()
 { return moons.size(); }
+
+glm::fmat4 Planet::getModelMatrix()
+{ return model_matrix; }
+
 
 
 // SETTER
 
 void Planet::addMoon(std::shared_ptr<Planet> moon)
 { moons.push_back(moon); }
+
+void Planet::setModelMatrix(glm::fmat4& modelMatrix)
+{ model_matrix = modelMatrix; }
 
 
 
