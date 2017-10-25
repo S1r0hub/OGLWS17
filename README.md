@@ -1,4 +1,4 @@
-# OpenGLframework
+# Solar System
 Computergraphics Assignments WiSe 17/18
   
   
