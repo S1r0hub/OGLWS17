@@ -1,11 +1,10 @@
 # OpenGLframework
 Computergraphics Assignments WiSe 17/18
-
-
-<br/>
+  
+  
 ### Current features
 Everything marked with [] is an optional task.
-
+  
 ----
 #### Assignment 1
 - [x] Planets (8 planets, 1 sun, 1 moon)
@@ -35,9 +34,8 @@ Everything marked with [] is an optional task.
 (to be continued)
 ...
 ----
-
-
-<br/>
+  
+  
 ### Controls
 
 * W = move forward
@@ -49,24 +47,21 @@ Everything marked with [] is an optional task.
 * MOUSE UP/DOWN = turn camera up/down
 * MOUSE LEFT/RIGHT = turn camera left/right
 * SHIFT = hold to double the speed while moving
-
-
-<br/>
+  
+  
 ### Tested Platforms
 * **Linux**
 * **Windows**
-
-
-<br/>
+  
+  
 ### Libraries
 * [**GLFW**](http://www.glfw.org/) for window and context creation
 * [**glbinding**](https://github.com/cginternals/glbinding) for OpenGL function binding
 * [**GLM**](glm.g-truc.net/) for mathematics
 * [**tinyobjloader**](http://syoyo.github.io/tinyobjloader/) for model loading
 * [**stb_image**](https://github.com/nothings/stb) for image loading
-
-
-<br/>
+  
+  
 ### License
 this framework is licensed undet the GPL v3
 * **GLFW** is licensed under the zlib/libpng license
