@@ -1,5 +1,5 @@
-# Solar System
-Computergraphics Assignments WiSe 17/18
+# Solar Sys
+Computergraphics WiSe 17/18
   
   
 ## Current features
@@ -66,7 +66,7 @@ Everything marked with [] is an optional task.
   
   
 ## License
-this framework is licensed undet the GPL v3
+this framework is licensed under the GPL v3
 * **GLFW** is licensed under the zlib/libpng license
 * **glbinding** is licensed under the MIT license
 * **glm** is licensed under the Happy Bunny License (Modified MIT)
