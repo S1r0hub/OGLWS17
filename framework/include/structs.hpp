@@ -3,6 +3,7 @@
 
 #include <map>
 #include <glbinding/gl/gl.h>
+#include <glm/glm.hpp>
 
 
 // use gl definitions from glbinding 
@@ -52,5 +53,14 @@ struct shader_program
   // uniform locations mapped to name
   std::map<std::string, GLint> u_locs{};
 };
+
+
+// star information
+struct Star
+{
+  glm::fvec3 position{};
+  glm::fvec3 color{1.f, 1.f, 1.f};
+};
+
 
 #endif

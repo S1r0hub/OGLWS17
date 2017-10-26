@@ -17,6 +17,11 @@
 #include <memory> // included to use shared pointers (std::shared_ptr)
 #include "Planet.hpp"
 
+// added for assignment 2
+#include <cstdlib> // for random
+#include <time.h> // for random seed
+#include <vector>
+
 
 // gpu representation of model
 class ApplicationSolar : public Application
@@ -43,8 +48,11 @@ class ApplicationSolar : public Application
     // draw all objects
     void render() const;
 
-    // upload planet information
+    // render planets and upload information to gpu
     void renderPlanet(std::shared_ptr<Planet> planet) const;
+
+    // render stars and upload information to gpu
+    void renderStars() const;
 
 
   protected:
@@ -52,11 +60,13 @@ class ApplicationSolar : public Application
     void initializeShaderPrograms();
     void initializeGeometry();
     void initializePlanets();
+    void initializeStars();
     void updateView();
     void move();
 
     // cpu representation of model
     model_object planet_object;
+    model_object stars{};
 
 
   private:
@@ -66,6 +76,7 @@ class ApplicationSolar : public Application
 
     // deque holding pointers for the planet objects
     std::deque<std::shared_ptr<Planet>> planets;
+    std::vector<glm::fvec3> starColor;
 
     // definition of pi needed for rotation
     float MATH_HALF_PI = glm::half_pi<float>();
@@ -93,6 +104,11 @@ class ApplicationSolar : public Application
 
     // store information about how the movement should be done
     glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
+
+    unsigned int starCount = 100;
+    float starSize = 2.f;
+    int starDistance_min = 30;
+    int starDistance_max = 80;
 };
 
 #endif
