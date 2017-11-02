@@ -36,7 +36,13 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 
 void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 {
-	// set the origin of the planet (where it will rotate around)
+  // first render orbits before translating position of planets
+  renderOrbits(planet);
+
+  // bind shader to upload the following uniforms
+  glUseProgram(m_shaders.at("planet").handle);
+
+  // set the origin of the planet (where it will rotate around)
   glm::fmat4 model_matrix = planet->getModelMatrix();
 
   // rotate planet around its origin (https://glm.g-truc.net/0.9.2/api/a00245.html)
@@ -82,6 +88,23 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 }
 
 
+void ApplicationSolar::renderOrbits(std::shared_ptr<Planet> planet) const
+{
+  // RENDER ORBITS
+  glUseProgram(m_shaders.at("orbits").handle);
+
+  glUniform3fv(m_shaders.at("orbits").u_locs.at("OrbitColor"), 1, planet->getOrbitColor());
+  glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(planet->getModelMatrix()));
+
+  // draw primitive
+  glBegin(GL_LINE_LOOP);
+  for (glm::fvec2 v : planet->getOrbitPoints())
+  { glVertex3f(v.x, 0, v.y); }
+  glEnd();
+}
+
+
+
 void ApplicationSolar::renderStars() const
 {
   glUseProgram(m_shaders.at("stars").handle);
@@ -91,29 +114,14 @@ void ApplicationSolar::renderStars() const
 
   // bind the VAO to draw
   glBindVertexArray(stars.vertex_AO);
-
-  for (unsigned int i = 0; i < starCount-1; i++)
-  {
-    curColor = starColor.at(i);
-    curColorArr[0] = curColor.r;
-    curColorArr[1] = curColor.g;
-    curColorArr[2] = curColor.b;
-
-    glUniform3fv(m_shaders.at("stars").u_locs.at("Color"), 1, curColorArr);
-
-    // draw bound vertex array using bound shader
-    glPointSize(starSize);
-    glDrawArrays(stars.draw_mode, i, i+1);
-  }
+  glPointSize(starSize);
+  glDrawArrays(stars.draw_mode, 0, starCount);
 }
 
 
 void ApplicationSolar::render() const
 {
   renderStars();
-
-  // bind shader to upload the following uniforms
-  glUseProgram(m_shaders.at("planet").handle);
 
   for (unsigned int i = 0; i < planets.size(); i++)
   { renderPlanet(planets.at(i)); }
@@ -143,6 +151,9 @@ void ApplicationSolar::updateView()
   
   glUseProgram(m_shaders.at("stars").handle);
   glUniformMatrix4fv(m_shaders.at("stars").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
+
+  glUseProgram(m_shaders.at("orbits").handle);
+  glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
 }
 
 
@@ -154,6 +165,9 @@ void ApplicationSolar::updateProjection()
   
   glUseProgram(m_shaders.at("stars").handle);
   glUniformMatrix4fv(m_shaders.at("stars").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
+
+  glUseProgram(m_shaders.at("orbits").handle);
+  glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
 }
 
 
@@ -161,10 +175,6 @@ void ApplicationSolar::updateProjection()
 void ApplicationSolar::uploadUniforms()
 {
   updateUniformLocations();
-  
-  // bind new shader
-  //glUseProgram(m_shaders.at("planet").handle);
-
   updateView();
   updateProjection();
 }
@@ -288,7 +298,15 @@ void ApplicationSolar::initializeShaderPrograms()
   // uniform for star colors
   m_shaders.at("stars").u_locs["ViewMatrix"] = -1;
   m_shaders.at("stars").u_locs["ProjectionMatrix"] = -1;
-  m_shaders.at("stars").u_locs["Color"] = -1;
+
+
+  // shader for orbits
+  m_shaders.emplace("orbits", shader_program{m_resource_path + "shaders/orbits.vert",
+                                             m_resource_path + "shaders/orbits.frag"});
+  m_shaders.at("orbits").u_locs["ModelMatrix"] = -1;
+  m_shaders.at("orbits").u_locs["ViewMatrix"] = -1;
+  m_shaders.at("orbits").u_locs["ProjectionMatrix"] = -1;
+  m_shaders.at("orbits").u_locs["OrbitColor"] = -1;
 }
 
 
@@ -351,23 +369,26 @@ void ApplicationSolar::initializeStars()
   // set random seed depending on time
   srand(time(NULL));
 
-  int positive = 1;
+  float positive = 1;
   float r, g, b;
   float distance;
   glm::fvec3 vec{};
 
   for (unsigned int i = 0; i < starCount; i++)
   {
-    positive = rand() % 2 == 0 ? 1 : -1;
+    positive = rand() % 2 == 0 ? 1.f : -1.f;
     vec.x = rand() * positive;
 
-    positive = rand() % 2 == 0 ? 1 : -1;
+    positive = rand() % 2 == 0 ? 1.f : -1.f;
     vec.y = rand() * positive;
 
-    positive = rand() % 2 == 0 ? 1 : -1;
+    positive = rand() % 2 == 0 ? 1.f : -1.f;
     vec.z = rand() * positive;
 
     // normalize the star position vector
+    if (glm::length(vec) < 1)
+    { vec = glm::fvec3{ 1.f, 1.f, 1.f }; }
+
     vec = glm::normalize(vec);
 
     // get random star distance
@@ -383,7 +404,12 @@ void ApplicationSolar::initializeStars()
     starVerts.push_back(vec.x);
     starVerts.push_back(vec.y);
     starVerts.push_back(vec.z);
-    starColor.push_back(glm::fvec3{r, g, b});
+
+    //starColor.push_back(glm::fvec3{r, g, b});
+
+    starVerts.push_back(r);
+    starVerts.push_back(g);
+    starVerts.push_back(b);
   }
 
 
@@ -398,16 +424,23 @@ void ApplicationSolar::initializeStars()
   glBufferData(GL_ARRAY_BUFFER, starVerts.size() * sizeof(float), starVerts.data(), GL_STATIC_DRAW);
 
 
-  // activate first attribute on gpu
+  // activate first attribute on gpu for position
   glEnableVertexAttribArray(0);
 
-  // the only attribute is 3 floats with no offset & stride (color passed per uniform)
+  // the only attribute is 3 floats with 3 floats stride and no offset
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+
+
+  // activate second attribute on gpu for the star color
+  glEnableVertexAttribArray(1);
+
+  // the only attribute is 3 floats with 3 floats stride and 3 floats offset
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) (3 * sizeof(float)));
 
 
   // draw points instead of triangles
   stars.draw_mode = GL_POINTS;
-  stars.num_elements = starVerts.size() / 3.f;
+  stars.num_elements = starVerts.size() / 6.f;
 }
 
 

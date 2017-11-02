@@ -14,6 +14,7 @@
 #include <glm/gtx/transform.hpp> // for glm::translate, rotate...
 #include <deque>
 #include <memory>
+#include <vector>
 
 
 // A struct holding information about a planet.
@@ -39,6 +40,7 @@ class Planet
 
     void addMoon(std::shared_ptr<Planet> moon);
     void setModelMatrix(glm::fmat4& modelMatrix);
+    void setOrbitColor(float r, float g, float b);
 
 
     // GETTER
@@ -51,6 +53,10 @@ class Planet
 
     float getOrbitRotationAngle(double timeMultiplier);
     float getOrbitRotationTime();
+    float getOrbitRadius();
+    float* getOrbitColor();
+    std::vector<glm::fvec2> getOrbitPoints();
+    float getOrbitCircumference();
     float getPlanetDayTime();
     float getRotationAngle(double timeMultiplier);
     float getSize();
@@ -68,6 +74,9 @@ class Planet
 
     // recalculate the angle for the self rotation (rotationAngle)
     void refreshSelfRotationAngle();
+
+    // calculate points for the orbit
+    void initializeOrbitPoints();
 
     // name of the planet
     std::string name = "Unknown";
@@ -104,6 +113,16 @@ class Planet
 
 	  // model matrix containing position and rotation...
 	  glm::fmat4 model_matrix{};
+
+    // distance from origin
+    float orbitRadius;
+    float orbitColor[3] = {255, 255, 255};
+
+    // number of orbit segments per circumference
+    float orbitSegments = 1.f;
+    unsigned int orbitSegmentsMin = 16;
+
+    std::vector<glm::fvec2> orbitPoints{};
 };
 
 #endif

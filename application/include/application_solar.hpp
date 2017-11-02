@@ -51,6 +51,9 @@ class ApplicationSolar : public Application
     // render planets and upload information to gpu
     void renderPlanet(std::shared_ptr<Planet> planet) const;
 
+    // render the orbits of planets and moons
+    void renderOrbits(std::shared_ptr<Planet> planet) const;
+
     // render stars and upload information to gpu
     void renderStars() const;
 
@@ -76,7 +79,6 @@ class ApplicationSolar : public Application
 
     // deque holding pointers for the planet objects
     std::deque<std::shared_ptr<Planet>> planets;
-    std::vector<glm::fvec3> starColor;
 
     // definition of pi needed for rotation
     float MATH_HALF_PI = glm::half_pi<float>();
@@ -105,8 +107,8 @@ class ApplicationSolar : public Application
     // store information about how the movement should be done
     glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
 
-    unsigned int starCount = 100;
-    float starSize = 2.f;
+    unsigned int starCount = 10000;
+    float starSize = 1.f;
     int starDistance_min = 30;
     int starDistance_max = 80;
 };

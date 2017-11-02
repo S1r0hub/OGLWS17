@@ -21,6 +21,10 @@ Planet::Planet(std::string name_, float planetSize, float orbitRotationTime_, fl
   // translate to origin
   model_matrix = glm::translate(model_matrix, getOrigin());
 
+  // calculate orbit distance / radius
+  orbitRadius = glm::length(orbitTranslation);
+
+  initializeOrbitPoints();
   refreshOrbitRotationAngle();
   refreshSelfRotationAngle();
 }
@@ -42,6 +46,11 @@ float Planet::getRotationAngle(double timeMultiplier)
 { return rotationAngle * timeMultiplier / 1000.; }
 
 float Planet::getOrbitRotationTime() { return orbitRotationTime; }
+float Planet::getOrbitRadius() { return orbitRadius; }
+float* Planet::getOrbitColor() { return orbitColor; }
+float Planet::getOrbitCircumference() { return glm::two_pi<float>() * orbitRadius; }
+std::vector<glm::fvec2> Planet::getOrbitPoints() { return orbitPoints; }
+
 float Planet::getPlanetDayTime() { return planetDayTime; }
 float Planet::getSize() { return size; }
 
@@ -64,6 +73,16 @@ void Planet::addMoon(std::shared_ptr<Planet> moon)
 void Planet::setModelMatrix(glm::fmat4& modelMatrix)
 { model_matrix = modelMatrix; }
 
+void Planet::setOrbitColor(float r, float g, float b)
+{
+  r = r > 255 ? 255 : r < 0 ? 0 : r;
+  g = g > 255 ? 255 : g < 0 ? 0 : g;
+  b = b > 255 ? 255 : b < 0 ? 0 : b;
+
+  orbitColor[0] = r;
+  orbitColor[1] = g;
+  orbitColor[2] = b;
+}
 
 
 // PRIVATE SETTER
@@ -94,4 +113,23 @@ void Planet::refreshSelfRotationAngle()
   // Ensure to not divide by zero.
   if (planetDayTime == 0.f) { rotationAngle = 0; }
   else { rotationAngle = full_angle / (planetDayTime * 24 * 60 * 60); }
+}
+
+
+void Planet::initializeOrbitPoints()
+{
+  // calculate orbit vertices
+  unsigned int orbitPts = std::ceil(getOrbitCircumference() * orbitSegments);
+  
+  if (orbitPts < orbitSegmentsMin) { orbitPts = orbitSegmentsMin; }
+
+  float a, x, y;
+
+  for (unsigned int i = 0; i < orbitPts; ++i)
+  {
+    a = glm::two_pi<float>() * (float)i / (float)orbitPts;
+    x = getOrbitRadius() * cos(a);
+    y = getOrbitRadius() * sin(a);
+    orbitPoints.push_back(glm::fvec2{ x,y });
+  }
 }
