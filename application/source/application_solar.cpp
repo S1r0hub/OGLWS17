@@ -385,10 +385,6 @@ void ApplicationSolar::initializeStars()
     positive = rand() % 2 == 0 ? 1.f : -1.f;
     vec.z = rand() * positive;
 
-    // normalize the star position vector
-    if (glm::length(vec) < 1)
-    { vec = glm::fvec3{ 1.f, 1.f, 1.f }; }
-
     vec = glm::normalize(vec);
 
     // get random star distance
@@ -405,13 +401,10 @@ void ApplicationSolar::initializeStars()
     starVerts.push_back(vec.y);
     starVerts.push_back(vec.z);
 
-    //starColor.push_back(glm::fvec3{r, g, b});
-
     starVerts.push_back(r);
     starVerts.push_back(g);
     starVerts.push_back(b);
   }
-
 
   // vertex array object
   glGenVertexArrays(1, &stars.vertex_AO);
@@ -428,14 +421,14 @@ void ApplicationSolar::initializeStars()
   glEnableVertexAttribArray(0);
 
   // the only attribute is 3 floats with 3 floats stride and no offset
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 
 
   // activate second attribute on gpu for the star color
   glEnableVertexAttribArray(1);
 
   // the only attribute is 3 floats with 3 floats stride and 3 floats offset
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) (3 * sizeof(float)));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
 
 
   // draw points instead of triangles
