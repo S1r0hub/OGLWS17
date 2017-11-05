@@ -104,15 +104,12 @@ void ApplicationSolar::renderOrbits(std::shared_ptr<Planet> planet) const
 }
 
 
-
 void ApplicationSolar::renderStars() const
 {
+  // use the shader program for the stars
   glUseProgram(m_shaders.at("stars").handle);
 
-  glm::fvec3 curColor;
-  float curColorArr[3];
-
-  // bind the VAO to draw
+  // bind the VAO to draw, set the point size and draw
   glBindVertexArray(stars.vertex_AO);
   glPointSize(starSize);
   glDrawArrays(stars.draw_mode, 0, starCount);
@@ -433,7 +430,7 @@ void ApplicationSolar::initializeStars()
 
   // draw points instead of triangles
   stars.draw_mode = GL_POINTS;
-  stars.num_elements = starVerts.size() / 6.f;
+  stars.num_elements = starVerts.size() / 6;
 }
 
 
