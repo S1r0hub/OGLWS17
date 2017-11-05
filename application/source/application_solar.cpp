@@ -417,14 +417,14 @@ void ApplicationSolar::initializeStars()
   // activate first attribute on gpu for position
   glEnableVertexAttribArray(0);
 
-  // the only attribute is 3 floats with 3 floats stride and no offset
+  // first attribute is 3 floats with 3 floats stride and no offset
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
 
 
   // activate second attribute on gpu for the star color
   glEnableVertexAttribArray(1);
 
-  // the only attribute is 3 floats with 3 floats stride and 3 floats offset
+  // second attribute is 3 floats with 3 floats stride and 3 floats offset
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
 
 
