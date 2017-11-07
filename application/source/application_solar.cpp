@@ -72,6 +72,11 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
   model_matrix = glm::scale(model_matrix, glm::fvec3(1.0f, 1.0f, 1.0f) * planet->getSize());
 
 
+  // upload planet color to shader
+  float* planetColor = planet->getColor();
+  glUniform3f(m_shaders.at("planet").u_locs.at("Color"), planetColor[0], planetColor[1], planetColor[2]);
+  glUniform1f(m_shaders.at("planet").u_locs.at("EmitValue"), planet->getEmitValue());
+
   // upload model matrix to shader
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
@@ -287,6 +292,8 @@ void ApplicationSolar::initializeShaderPrograms()
   m_shaders.at("planet").u_locs["ModelMatrix"] = -1;
   m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
+  m_shaders.at("planet").u_locs["Color"] = -1;
+  m_shaders.at("planet").u_locs["EmitValue"] = -1;
 
 
   // shader for stars
@@ -542,24 +549,55 @@ void ApplicationSolar::initializePlanets()
   // real day time of moons (in days)
   float dt_m_earth = 0; // it's actually 27.3 (same as orbit time), 0 does the same in this case
 
-
-  // create and add all the planets to our list of planets
+  // test debug
   std::cout << "Sun has a size of " << size_sun << std::endl;
-  planets.push_back(std::make_shared<Planet>("Sun", size_sun, ot_sun, dt_sun));
-  planets.push_back(std::make_shared<Planet>("Mercury", size_mercury, ot_mercury, dt_mercury, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mercury}));
-  planets.push_back(std::make_shared<Planet>("Venus", size_venus, ot_venus, dt_venus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_venus}));
+
+
+  // create all the planets and set their attributes
+  std::shared_ptr<Planet> sun = std::make_shared<Planet>("Sun", size_sun, ot_sun, dt_sun);
+  sun->setColor(255, 220, 60, 2.0f);
   
-  std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_earth});
-  std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_m_earth});
+  std::shared_ptr<Planet> mercury = std::make_shared<Planet>("Mercury", size_mercury, ot_mercury, dt_mercury, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_mercury });
+  mercury->setColor(204, 151, 82);
+  
+  std::shared_ptr<Planet> venus = std::make_shared<Planet>("Venus", size_venus, ot_venus, dt_venus, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_venus });
+  venus->setColor(254, 96, 30);
+
+  std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_earth });
+  earth->setColor(50, 50, 255);
+
+  std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_m_earth });
+  moon1->setColor(50, 50, 50);
   earth->addMoon(moon1);
+    
+  std::shared_ptr<Planet> mars = std::make_shared<Planet>("Mars", size_mars, ot_mars, dt_mars, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_mars });
+  mars->setColor(200, 100, 50);
+  
+  std::shared_ptr<Planet> jupiter = std::make_shared<Planet>("Jupiter", size_jupiter, ot_jupiter, dt_jupiter, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_jupiter });
+  jupiter->setColor(200, 110, 38);
+  
+  std::shared_ptr<Planet> saturn = std::make_shared<Planet>("Saturn", size_saturn, ot_saturn, dt_saturn, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_saturn });
+  saturn->setColor(250, 200, 120);
+  
+  std::shared_ptr<Planet> uranus = std::make_shared<Planet>("Uranus", size_uranus, ot_uranus, dt_uranus, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_uranus });
+  uranus->setColor(90, 130, 250);
+  
+  std::shared_ptr<Planet> neptun = std::make_shared<Planet>("Neptun", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_neptune });
+  neptun->setColor(100, 120, 200);
+
+  // add colors to list of planets that we want to render
+  planets.push_back(sun);
+  planets.push_back(mercury);
+  planets.push_back(venus);
   planets.push_back(earth);
+  planets.push_back(mars);
+  planets.push_back(jupiter);
+  planets.push_back(saturn);
+  planets.push_back(uranus);
+  planets.push_back(neptun);
 
-  planets.push_back(std::make_shared<Planet>("Mars", size_mars, ot_mars, dt_mars, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_mars}));
-  planets.push_back(std::make_shared<Planet>("Jupiter", size_jupiter, ot_jupiter, dt_jupiter, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_jupiter}));
-  planets.push_back(std::make_shared<Planet>("Saturn", size_saturn, ot_saturn, dt_saturn, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_saturn}));
-  planets.push_back(std::make_shared<Planet>("Uranus", size_uranus, ot_uranus, dt_uranus, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_uranus}));
-  planets.push_back(std::make_shared<Planet>("Neptun", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{0.0f, 0.0f, dist_neptune}));
 
+  // test debug
   std::cout << "Rotation angle for \"" << planets.at(0)->getName() << "\" per second is: " << planets.at(0)->getRotationAngle(time_multiplier) << std::endl;
 }
 

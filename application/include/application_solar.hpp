@@ -75,7 +75,7 @@ class ApplicationSolar : public Application
   private:
 
     // simulation speed used by planets (1 = real time) (use around 1 million)
-    double time_multiplier = 1000000;
+    double time_multiplier = 100000;
 
     // deque holding pointers for the planet objects
     std::deque<std::shared_ptr<Planet>> planets;
@@ -110,7 +110,7 @@ class ApplicationSolar : public Application
     unsigned int starCount = 10000;
     float starSize = 1.f;
     int starDistance_min = 30;
-    int starDistance_max = 80;
+    int starDistance_max = 100;
 };
 
 #endif

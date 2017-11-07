@@ -46,12 +46,19 @@ float Planet::getRotationAngle(double timeMultiplier)
 { return rotationAngle * timeMultiplier / 1000.; }
 
 float Planet::getOrbitRotationTime() { return orbitRotationTime; }
+
 float Planet::getOrbitRadius() { return orbitRadius; }
+
 float* Planet::getOrbitColor() { return orbitColor; }
+
+float* Planet::getColor() { return planetColor; }
+
 float Planet::getOrbitCircumference() { return glm::two_pi<float>() * orbitRadius; }
+
 std::vector<glm::fvec2> Planet::getOrbitPoints() { return orbitPoints; }
 
 float Planet::getPlanetDayTime() { return planetDayTime; }
+
 float Planet::getSize() { return size; }
 
 std::deque<std::shared_ptr<Planet>>& Planet::getMoons()
@@ -63,6 +70,8 @@ int Planet::getMoonCount()
 glm::fmat4 Planet::getModelMatrix()
 { return model_matrix; }
 
+float Planet::getEmitValue() { return emits;  }
+
 
 
 // SETTER
@@ -73,15 +82,23 @@ void Planet::addMoon(std::shared_ptr<Planet> moon)
 void Planet::setModelMatrix(glm::fmat4& modelMatrix)
 { model_matrix = modelMatrix; }
 
-void Planet::setOrbitColor(float r, float g, float b)
+void Planet::setOrbitColor(int r, int g, int b)
 {
-  r = r > 255 ? 255 : r < 0 ? 0 : r;
-  g = g > 255 ? 255 : g < 0 ? 0 : g;
-  b = b > 255 ? 255 : b < 0 ? 0 : b;
+  float r_norm = (float) r, g_norm = (float) g, b_norm = (float) b;
+  normalizeColor(r_norm, g_norm, b_norm);
+  orbitColor[0] = r_norm;
+  orbitColor[1] = g_norm;
+  orbitColor[2] = b_norm;
+}
 
-  orbitColor[0] = r;
-  orbitColor[1] = g;
-  orbitColor[2] = b;
+void Planet::setColor(int r, int g, int b, float emitting)
+{
+  float r_norm = (float)r, g_norm = (float)g, b_norm = (float)b;
+  normalizeColor(r_norm, g_norm, b_norm);
+  planetColor[0] = r_norm;
+  planetColor[1] = g_norm;
+  planetColor[2] = b_norm;
+  emits = emitting;
 }
 
 
@@ -132,4 +149,15 @@ void Planet::initializeOrbitPoints()
     y = getOrbitRadius() * sin(a);
     orbitPoints.push_back(glm::fvec2{ x,y });
   }
+}
+
+
+void Planet::normalizeColor(float& r, float& g, float& b)
+{
+  r = r > 255 ? 255 : r < 0 ? 0 : r;
+  r = r / 255.0f;
+  g = g > 255 ? 255 : g < 0 ? 0 : g;
+  g = g / 255.0f;
+  b = b > 255 ? 255 : b < 0 ? 0 : b;
+  b = b / 255.0f;
 }

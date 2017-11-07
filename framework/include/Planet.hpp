@@ -40,7 +40,10 @@ class Planet
 
     void addMoon(std::shared_ptr<Planet> moon);
     void setModelMatrix(glm::fmat4& modelMatrix);
-    void setOrbitColor(float r, float g, float b);
+    void setOrbitColor(int r, int g, int b);
+
+    // in range of 0 to 255
+    void setColor(int r, int g, int b, float emitting = 0.0f);
 
 
     // GETTER
@@ -55,13 +58,19 @@ class Planet
     float getOrbitRotationTime();
     float getOrbitRadius();
     float* getOrbitColor();
+    float* getColor();
+
+    float getEmitValue();
+
     std::vector<glm::fvec2> getOrbitPoints();
+
     float getOrbitCircumference();
     float getPlanetDayTime();
     float getRotationAngle(double timeMultiplier);
     float getSize();
 
     std::deque<std::shared_ptr<Planet>>& getMoons();
+
     int getMoonCount();
 
     glm::fmat4 getModelMatrix();
@@ -77,6 +86,9 @@ class Planet
 
     // calculate points for the orbit
     void initializeOrbitPoints();
+
+    // normalize a color from range 0 - 255 to 0 - 1
+    void normalizeColor(float& r, float& g, float& b);
 
     // name of the planet
     std::string name = "Unknown";
@@ -116,13 +128,20 @@ class Planet
 
     // distance from origin
     float orbitRadius;
-    float orbitColor[3] = {255, 255, 255};
+    float orbitColor[3] = { 255, 255, 255 };
 
     // number of orbit segments per circumference
     float orbitSegments = 1.f;
-    unsigned int orbitSegmentsMin = 16;
+    unsigned int orbitSegmentsMin = 32;
 
+    // points that form the orbit
     std::vector<glm::fvec2> orbitPoints{};
+
+    // planet color
+    float planetColor[3] = { 0, 0, 0 };
+
+    // tells if this planet emits light
+    float emits = 0.0f;
 };
 
 #endif
