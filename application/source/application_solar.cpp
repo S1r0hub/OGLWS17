@@ -23,6 +23,10 @@ using namespace gl;
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// to convert matrix to string.. (debug)
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/matrix_access.hpp>
+
 
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
@@ -81,7 +85,8 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
   // extra matrix for normal transformation to keep them orthogonal to surface
-  glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
+  //glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
+  glm::fmat4 normal_matrix = glm::inverseTranspose(view_matrix * model_matrix);
   glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
 
@@ -142,8 +147,9 @@ void ApplicationSolar::updateView()
   movementVector = glm::fvec3{};
 
   // vertices are transformed in camera space, so camera transform must be inverted
-  glm::fmat4 view_matrix = glm::inverse(m_view_transform);
- 
+  //glm::fmat4 view_matrix = glm::inverse(m_view_transform);
+  view_matrix = glm::inverse(m_view_transform);
+
   // undo the matrix x-axis rotation to avoid weird camera behavoir next rotation (this will lock z-axis)
   m_view_transform = glm::rotate(m_view_transform, -cameraRotationX, glm::fvec3{1.0f, 0.0f, 0.0f});
 
@@ -204,6 +210,19 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
       case GLFW_KEY_SPACE: moveUp = active; break;
       case GLFW_KEY_C: moveDown = active; break;
       case GLFW_KEY_LEFT_SHIFT: moveFast = active; break;
+      case GLFW_KEY_P:
+        // debug - to check camera position and view matrix
+        std::cout << "--------------------" << std::endl;
+        std::cout << "View Mat:" << std::endl;
+        std::cout << glm::to_string(view_matrix) << std::endl;
+        std::cout << "Camera Position:" << std::endl;
+        glm::fmat4 ivm = glm::inverse(view_matrix);
+        glm::fvec4 camPos = glm::column(ivm, 3);
+        std::cout << glm::to_string(camPos) << std::endl;
+        std::cout << "Camera Position Normalized:" << std::endl;
+        std::cout << glm::to_string(glm::normalize(camPos)) << std::endl;
+        std::cout << "--------------------" << std::endl;
+        break;
     }
   }
 
@@ -284,8 +303,8 @@ void ApplicationSolar::mouseCallback(double pos_x, double pos_y)
 void ApplicationSolar::initializeShaderPrograms()
 {
   // store shader program objects in container
-  m_shaders.emplace("planet", shader_program{m_resource_path + "shaders/simple.vert",
-                                             m_resource_path + "shaders/simple.frag"});
+  m_shaders.emplace("planet", shader_program{m_resource_path + "shaders/planet.vert",
+                                             m_resource_path + "shaders/planet.frag"});
 
   // request uniform locations for shader program
   m_shaders.at("planet").u_locs["NormalMatrix"] = -1;
