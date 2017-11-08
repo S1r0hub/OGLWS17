@@ -13,10 +13,10 @@ in vec3 camPos;
 const vec3 lightPos = vec3(0.0, 0.0, 0.0);
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 const float sunIntensity = 1.0;
-const float shininess = 200.0;
+const float shininess = 100.0;
 const float ambIntensity = 0.0001;
 const float diffIntensity = 1.0;
-const float specIntensity = 1.0;
+const float specIntensity = 0.5;
 
 out vec4 out_Color;
 
