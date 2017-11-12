@@ -43,7 +43,9 @@ class Planet
     void setOrbitColor(int r, int g, int b);
 
     // in range of 0 to 255
-    void setColor(int r, int g, int b, float emitting = 0.0f);
+    void setColor(int r, int g, int b);
+
+    void isSun(bool isASun);
 
 
     // GETTER
@@ -60,9 +62,10 @@ class Planet
     float* getOrbitColor();
     float* getColor();
 
-    float getEmitValue();
+    bool isSun();
 
     std::vector<glm::fvec2> getOrbitPoints();
+    unsigned int getOrbitPointCount();
 
     float getOrbitCircumference();
     float getPlanetDayTime();
@@ -135,13 +138,13 @@ class Planet
     unsigned int orbitSegmentsMin = 32;
 
     // points that form the orbit
-    std::vector<glm::fvec2> orbitPoints{};
+    std::vector<glm::fvec2> orbitPoints;
 
     // planet color
     float planetColor[3] = { 0, 0, 0 };
 
     // tells if this planet emits light
-    float emits = 0.0f;
+    bool sun = false;
 };
 
 #endif

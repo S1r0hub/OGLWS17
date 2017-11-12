@@ -56,6 +56,7 @@ float* Planet::getColor() { return planetColor; }
 float Planet::getOrbitCircumference() { return glm::two_pi<float>() * orbitRadius; }
 
 std::vector<glm::fvec2> Planet::getOrbitPoints() { return orbitPoints; }
+unsigned int Planet::getOrbitPointCount() { return orbitPoints.size(); }
 
 float Planet::getPlanetDayTime() { return planetDayTime; }
 
@@ -70,7 +71,7 @@ int Planet::getMoonCount()
 glm::fmat4 Planet::getModelMatrix()
 { return model_matrix; }
 
-float Planet::getEmitValue() { return emits;  }
+bool Planet::isSun() { return sun;  }
 
 
 
@@ -91,15 +92,18 @@ void Planet::setOrbitColor(int r, int g, int b)
   orbitColor[2] = b_norm;
 }
 
-void Planet::setColor(int r, int g, int b, float emitting)
+void Planet::setColor(int r, int g, int b)
 {
   float r_norm = (float)r, g_norm = (float)g, b_norm = (float)b;
   normalizeColor(r_norm, g_norm, b_norm);
   planetColor[0] = r_norm;
   planetColor[1] = g_norm;
   planetColor[2] = b_norm;
-  emits = emitting;
 }
+
+void Planet::isSun(bool isASun)
+{ sun = isASun; }
+
 
 
 // PRIVATE SETTER
@@ -136,7 +140,10 @@ void Planet::refreshSelfRotationAngle()
 void Planet::initializeOrbitPoints()
 {
   // calculate orbit vertices
-  unsigned int orbitPts = std::ceil(getOrbitCircumference() * orbitSegments);
+  float orbitCircumference = getOrbitCircumference();
+  if (orbitCircumference <= 0.f) { return; }
+
+  unsigned int orbitPts = std::ceil(orbitCircumference * orbitSegments);
   
   if (orbitPts < orbitSegmentsMin) { orbitPts = orbitSegmentsMin; }
 
@@ -147,7 +154,7 @@ void Planet::initializeOrbitPoints()
     a = glm::two_pi<float>() * (float)i / (float)orbitPts;
     x = getOrbitRadius() * cos(a);
     y = getOrbitRadius() * sin(a);
-    orbitPoints.push_back(glm::fvec2{ x,y });
+    orbitPoints.push_back(glm::fvec2{x, y});
   }
 }
 

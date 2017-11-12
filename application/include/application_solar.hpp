@@ -77,8 +77,9 @@ class ApplicationSolar : public Application
     // simulation speed used by planets (1 = real time) (use around 1 million)
     double time_multiplier = 1000;
 
-    // deque holding pointers for the planet objects
-    std::deque<std::shared_ptr<Planet>> planets;
+    // deque holding pointers for the planet and sun objects
+    std::shared_ptr<Planet> sun;
+    //std::deque<std::shared_ptr<Planet>> planets;
 
     // definition of pi needed for rotation
     float MATH_HALF_PI = glm::half_pi<float>();
@@ -113,6 +114,10 @@ class ApplicationSolar : public Application
     int starDistance_max = 100;
 
     glm::mat4 view_matrix{};
+
+    // 0 = blinn phong, 1 = cel shading
+    int shadingMode = 0;
+    std::vector<float> borderColor = {1.0, 1.0, 1.0};
 };
 
 #endif
