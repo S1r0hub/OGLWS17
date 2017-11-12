@@ -192,6 +192,7 @@ void ApplicationSolar::render() const
   // framework does not provide a main loop and
   // we don't want to change it too much.
   double currentTimestamp = glfwGetTime();
+  if (lastTimestamp < 0.0) { lastTimestamp = currentTimestamp; }
   deltaTime = float(currentTimestamp - lastTimestamp);
   lastTimestamp = currentTimestamp;
 }
