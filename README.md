@@ -11,16 +11,16 @@ Everything marked with [] is an optional task.
 - [x] [Camera controls]
 ----
 #### Assignment 2  
-- [ ] Stars
-- [ ] New Shader for stars
-- [ ] [Displaying the orbit of planets]
+- [x] Stars
+- [x] New Shader for stars
+- [x] [Displaying the orbit of planets]
 ----
 #### Assignment 3  
-- [ ] Planet colors
-- [ ] Blinn-Phong local illumination model for planet fragment shader
-- [ ] [Cel-shading effect]
-- [ ] [Colored border/outline for each planet (other than the background)]
-- [ ] [Switching between Phong and cel-shading using the number keys "1" and "2"]
+- [x] Planet colors
+- [x] Blinn-Phong local illumination model for planet fragment shader
+- [x] [Cel-shading effect]
+- [x] [Colored border/outline for each planet (other than the background)]
+- [x] [Switching between Phong and cel-shading using the number keys "1" and "2"]
 ----
 #### Assignment 4  
 - [ ] Planet texturing
