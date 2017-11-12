@@ -38,7 +38,7 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 }
 
 
-void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
+void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 {
   // first render orbits before translating position of planets
   renderOrbits(planet);
@@ -62,7 +62,7 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
     moon = moons.at(i);
     // use the current model matrix of the origin planet (transformed to position)
     moon->setModelMatrix(model_matrix);
-    renderPlanet(moon);
+    renderObject(moon);
   }
 
   // rotate the planet itself
@@ -136,7 +136,7 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
       // draw the object just 2d with the border color
       glEnable(GL_CULL_FACE); // enable culling
       glCullFace(GL_FRONT);   // enable culling of front faces (render back faces)
-      //glDepthMask(GL_TRUE); // enable writes to Z-buffer (needed for texte cel shading later)
+      //glDepthMask(GL_TRUE); // enable writes to Z-buffer (needed for texture cel shading later)
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
 
       // 2. draw the cel shading color
@@ -146,7 +146,7 @@ void ApplicationSolar::renderPlanet(std::shared_ptr<Planet> planet) const
 
       // draw the 3d object layer and add it to the 2d border layer
       glCullFace(GL_BACK);     // enable culling of back faces (don't render them)
-      //glDepthMask(GL_FALSE); // disable writes to Z-buffer (needed for texte cel shading later)
+      //glDepthMask(GL_FALSE); // disable writes to Z-buffer (needed for texture cel shading later)
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
     }
   }
@@ -186,12 +186,14 @@ void ApplicationSolar::renderStars() const
 void ApplicationSolar::render() const
 {
   renderStars();
+  renderObject(sun); // render the sun and all their planets with their moons
 
-  /* // old version
-  for (unsigned int i = 0; i < planets.size(); i++)
-  { renderPlanet(planets.at(i)); }*/
-
-  renderPlanet(sun);
+  // We sadly have to use a mutable here because the
+  // framework does not provide a main loop and
+  // we don't want to change it too much.
+  double currentTimestamp = glfwGetTime();
+  deltaTime = float(currentTimestamp - lastTimestamp);
+  lastTimestamp = currentTimestamp;
 }
 
 
@@ -335,19 +337,19 @@ void ApplicationSolar::move()
     float speed = cameraSpeed * (moveFast ? cameraSprintMultiplier : 1.f);
 
     if (moveForward)
-    { movementVector += glm::fvec3{0.0f, 0.0f, -1.0f} * speed; }
+    { movementVector += glm::fvec3{0.0f, 0.0f, -1.0f} * deltaTime * speed; }
     else if (moveBackward)
-    { movementVector += glm::fvec3{0.0f, 0.0f, 1.0f} * speed; }
+    { movementVector += glm::fvec3{0.0f, 0.0f, 1.0f} * deltaTime * speed; }
   
     if (moveLeft)
-    { movementVector += glm::fvec3{-1.0f, 0.0f, 0.0f} * speed; }
+    { movementVector += glm::fvec3{-1.0f, 0.0f, 0.0f} * deltaTime * speed; }
     else if (moveRight)
-    { movementVector += glm::fvec3{1.0f, 0.0f, 0.0f} * speed; }
+    { movementVector += glm::fvec3{1.0f, 0.0f, 0.0f} * deltaTime * speed; }
 
     if (moveUp)
-    { movementVector += glm::fvec3{0.0f, 1.0f, 0.0f} * speed; }
+    { movementVector += glm::fvec3{0.0f, 1.0f, 0.0f} * deltaTime * speed; }
     else if (moveDown)
-    { movementVector += glm::fvec3{0.0f, -1.0f, 0.0f} * speed; }
+    { movementVector += glm::fvec3{0.0f, -1.0f, 0.0f} * deltaTime * speed; }
 
     // If we move on x and z at the same time
     // the speed would be double as fast, so we have to divide in this case:
@@ -359,24 +361,22 @@ void ApplicationSolar::move()
 }
 
 
-
 //handle delta mouse movement input
 void ApplicationSolar::mouseCallback(double pos_x, double pos_y)
 {
   // left = pos_x = -1, right = pos_x = 1
   // up = pos_y = -1, down = pos_y = 1
 
-
-  // Ensure the values are always -1 , 0 or 1
+  // Ensure the values are always -1 and 1
   // because there was a weird high value after the first movement.
-  pos_x = pos_x > 1 ? 1 : pos_x < -1 ? -1 : pos_x;
-  pos_y = pos_y > 1 ? 1 : pos_y < -1 ? -1 : pos_y;
+  pos_x = glm::clamp(pos_x, -1.0, 1.0);
+  pos_y = glm::clamp(pos_y, -1.0, 1.0);
 
   // rotate the view around the y-axis (left and right)
-  m_view_transform = glm::rotate(m_view_transform, (float) (cameraRotationSpeed * -pos_x), glm::fvec3{0.0f, 1.0f, 0.0f});
+  m_view_transform = glm::rotate(m_view_transform, (float) (cameraRotationSpeed * deltaTime * -pos_x), glm::fvec3{0.0f, 1.0f, 0.0f});
 
   // store the rotation up and down and apply it in updateView()
-  float camRotXAdd = (float) (cameraRotationSpeed * -pos_y);
+  float camRotXAdd = (float) (cameraRotationSpeed * deltaTime * -pos_y);
 
   // ensure we only rotate 90 degree up and -90 degree down
   // to avoid inverted camera rotation

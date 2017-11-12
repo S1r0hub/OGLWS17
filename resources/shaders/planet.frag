@@ -30,7 +30,8 @@ vec2 blinnPhong(vec3 lightDir, vec3 viewDir, float lightInt, float colIntAmb, fl
   vec3 H = normalize(V + L);        // halfway vector between viewer and light-source
 
   // the diffuse light factor
-  float diffuse = lightInt * colIntDiff * max(0.0, dot(N,L));
+  //float diffuse = lightInt * colIntDiff * max(0.0, dot(N,L));
+  float diffuse = lightInt * colIntDiff * clamp(dot(N,L), 0, 1);
 
   // the specular light factor
   float specular = 0;

@@ -49,7 +49,7 @@ class ApplicationSolar : public Application
     void render() const;
 
     // render planets and upload information to gpu
-    void renderPlanet(std::shared_ptr<Planet> planet) const;
+    void renderObject(std::shared_ptr<Planet> planet) const;
 
     // render the orbits of planets and moons
     void renderOrbits(std::shared_ptr<Planet> planet) const;
@@ -94,8 +94,8 @@ class ApplicationSolar : public Application
          moveFast = false;
 
     // how fast the camera is moving and rotating in general
-    float cameraSpeed = 0.1f;
-    float cameraRotationSpeed = 0.01f;
+    float cameraSpeed = 30.f;
+    float cameraRotationSpeed = 3.f;
 
     // store information about the camera rotation around the x-axis
     float cameraRotationX = 0.f;
@@ -118,6 +118,11 @@ class ApplicationSolar : public Application
     // 0 = blinn phong, 1 = cel shading
     int shadingMode = 0;
     std::vector<float> borderColor = {1.0, 1.0, 1.0};
+
+    // delta time related
+    // mutable because we have to change it in the const render function
+    mutable float deltaTime = 0.0;
+    mutable double lastTimestamp = -1.0;
 };
 
 #endif
