@@ -338,24 +338,26 @@ void ApplicationSolar::move()
     float speed = cameraSpeed * (moveFast ? cameraSprintMultiplier : 1.f);
 
     if (moveForward)
-    { movementVector += glm::fvec3{0.0f, 0.0f, -1.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{0.0f, 0.0f, -1.0f} * speed; }
     else if (moveBackward)
-    { movementVector += glm::fvec3{0.0f, 0.0f, 1.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{0.0f, 0.0f, 1.0f} * speed; }
   
     if (moveLeft)
-    { movementVector += glm::fvec3{-1.0f, 0.0f, 0.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{-1.0f, 0.0f, 0.0f} * speed; }
     else if (moveRight)
-    { movementVector += glm::fvec3{1.0f, 0.0f, 0.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{1.0f, 0.0f, 0.0f} * speed; }
 
     if (moveUp)
-    { movementVector += glm::fvec3{0.0f, 1.0f, 0.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{0.0f, 1.0f, 0.0f} * speed; }
     else if (moveDown)
-    { movementVector += glm::fvec3{0.0f, -1.0f, 0.0f} * deltaTime * speed; }
+    { movementVector += glm::fvec3{0.0f, -1.0f, 0.0f} * speed; }
 
     // If we move on x and z at the same time
     // the speed would be double as fast, so we have to divide in this case:
     if (movementVector.x != 0 && movementVector.z != 0)
     { movementVector *= glm::fvec3{0.5f, 0.5f, 1.0f}; }
+
+    movementVector *= deltaTime;
 
     updateView();
   }
@@ -468,6 +470,7 @@ void ApplicationSolar::initializeGeometry()
   model planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_cube.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_monkey.obj", model::NORMAL);
+  //model planet_model = model_loader::obj(m_resource_path + "models/fidget_01_small.obj", model::NORMAL);
 
   // generate vertex array object
   glGenVertexArrays(1, &planet_object.vertex_AO); // = Array Object
