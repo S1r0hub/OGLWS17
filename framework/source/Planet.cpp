@@ -6,6 +6,9 @@
 
 #include "Planet.hpp"
 
+// include texture loader
+#include <stb_image.h>
+
 
 // CONSTRUCTOR
 
@@ -72,6 +75,30 @@ glm::fmat4 Planet::getModelMatrix()
 { return model_matrix; }
 
 bool Planet::isSun() { return sun;  }
+
+// loads a texture and returns true if the process was successful
+bool Planet::loadTexture(const char* path, int width, int height, int bit)
+{
+  //    int x,y,n;
+  //    unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
+  //    // ... process data if not NULL ...
+  //    // ... x = width, y = height, n = # 8-bit components per pixel ...
+  //    // ... replace '0' with '1'..'4' to force that many components per pixel
+  //    // ... but 'n' will always be the number that it would have been if you said 0
+  //    stbi_image_free(data)
+
+  imageData = stbi_load(path, &width, &height, &bit, 0);
+
+  // vllt erst im destructor machen -> nochmal nachschauen!!!
+  stbi_image_free(imageData);
+
+  if (imageData != nullptr) { return true; }
+  return false;
+}
+
+// returns pixel data as an unsigned char * or a nullptr if loading failed
+unsigned char* Planet::getTextureData()
+{ return imageData; }
 
 
 

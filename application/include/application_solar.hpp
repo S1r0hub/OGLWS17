@@ -122,6 +122,9 @@ class ApplicationSolar : public Application
     // mutable because we have to change it in the const render function
     mutable float deltaTime = 0.0;
     mutable double lastTimestamp = -1.0;
+
+    // whether or not to use textures (can be changed by user pressing T)
+    bool useTextures = false;
 };
 
 #endif

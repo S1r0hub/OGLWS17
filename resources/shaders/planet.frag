@@ -2,7 +2,6 @@
 
 //in vec3 pass_Normal;
 in vec3 planetColor;
-in float planetEmit;
 
 in vec3 vWorldPos;
 in vec3 vWorldNormal;
@@ -59,8 +58,7 @@ void main()
   vec2 bps = blinnPhong(lightDir, viewDir, sunIntensity, ambIntensity, diffIntensity, specIntensity);
 
   // combine the shading with the colors
-  vec3 combinedColor = planetEmit * planetColor +
-                       bps.x * planetColor +
+  vec3 combinedColor = bps.x * planetColor +
                        bps.y * specularColor;
 
   // apply a screen gamma

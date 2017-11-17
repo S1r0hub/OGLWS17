@@ -78,6 +78,12 @@ class Planet
 
     glm::fmat4 getModelMatrix();
 
+    // loads a texture and returns true if the process was successful
+    bool loadTexture(const char*, int width, int height, int bit = 16);
+
+    // returns pixel data as an unsigned char * or a nullptr if loading failed
+    unsigned char* getTextureData();
+
 
   private:
 
@@ -145,6 +151,9 @@ class Planet
 
     // tells if this planet emits light
     bool sun = false;
+
+    // holds image data
+    unsigned char* imageData = nullptr;
 };
 
 #endif

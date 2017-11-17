@@ -107,6 +107,13 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       // we would prefer to pass a vector here but the assignment tells us to use Uniform3f
       glUniform3f(m_shaders.at("planet").u_locs.at("Color"), planetColor[0], planetColor[1], planetColor[2]);
 
+      // upload texture
+      GLuint color_sampler_location = glGetUniformLocation(m_shaders.at("planet").handle, "ColorTex");
+      
+      // use TEXTURE0 and thus upload 0 at glUniform1i as well
+      glActiveTexture(GL_TEXTURE0);
+      glUniform1i(color_sampler_location, 0);
+
       // upload model matrix to shader
       glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
@@ -304,6 +311,14 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
         shadingMode = 1;
         break;
 
+      case GLFW_KEY_T:
+        // to enable/disable textures
+        useTextures = !useTextures;
+        glUseProgram(m_shaders.at("planet").handle);
+        glUniform1i(m_shaders.at("planet").u_locs["useTexture"], useTextures);
+        std::cout << "Textures " << (useTextures ? "enabled" : "disabled") << std::endl;
+        break;
+
       case GLFW_KEY_P:
         // debug - to check camera position and view matrix
         std::cout << "--------------------" << std::endl;
@@ -410,6 +425,8 @@ void ApplicationSolar::initializeShaderPrograms()
   m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("planet").u_locs["Color"] = -1;
+  m_shaders.at("planet").u_locs["useTexture"] = -1;
+  m_shaders.at("planet").u_locs["tex"] = -1;
 
   // request uniform locations for sun shader program
   //m_shaders.at("sun").u_locs["NormalMatrix"] = -1; // not needed currently
@@ -465,18 +482,24 @@ void ApplicationSolar::initializeShaderPrograms()
 
 // load models
 void ApplicationSolar::initializeGeometry()
-{
+{  
+  model planet_model;
+
+  planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL | model::TEXCOORD);
+
+  // old version without textures
   //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
-  model planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
+  //planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_cube.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_monkey.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/fidget_01_small.obj", model::NORMAL);
+
 
   // generate vertex array object
   glGenVertexArrays(1, &planet_object.vertex_AO); // = Array Object
   // bind the array for attaching buffers
   glBindVertexArray(planet_object.vertex_AO);
-  
+
   // generate generic buffer
   glGenBuffers(1, &planet_object.vertex_BO);
 
@@ -490,10 +513,17 @@ void ApplicationSolar::initializeGeometry()
   glEnableVertexAttribArray(0);
   // first attribute is 3 floats with no offset & stride
   glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::POSITION]);
+  
   // activate second attribute on gpu
   glEnableVertexAttribArray(1);
   // second attribute is 3 floats with no offset & stride
   glVertexAttribPointer(1, model::NORMAL.components, model::NORMAL.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::NORMAL]);
+
+
+  // activate second attribute on gpu
+  glEnableVertexAttribArray(2);
+  // attribute for uv mapping
+  glVertexAttribPointer(2, model::TEXCOORD.components, model::TEXCOORD.type, GL_FALSE, planet_model.vertex_bytes, planet_model.offsets[model::TEXCOORD]);
 
 
   // generate generic buffer
@@ -713,6 +743,8 @@ void ApplicationSolar::initializePlanets()
 
   std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_earth });
   earth->setColor(50, 50, 255);
+  //earth->loadTexture("texture/earth.jpg"); // TODO
+  
 
   std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_m_earth });
   moon1->setColor(50, 50, 50);
