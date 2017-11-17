@@ -9,11 +9,11 @@ layout(location = 1) in vec3 in_Normal;
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
-uniform mat4 NormalMatrix;
+//uniform mat4 NormalMatrix;
 uniform vec3 Color;
 uniform float EmitValue;
 
-out vec3 pass_Normal;
+//out vec3 pass_Normal;
 out vec3 planetColor;
 out float planetEmit;
 
@@ -24,7 +24,7 @@ out vec3 camPos;
 
 void main(void)
 {
-  pass_Normal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
+  //pass_Normal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
   planetColor = Color;
   planetEmit = EmitValue;
 

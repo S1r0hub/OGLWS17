@@ -110,10 +110,10 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       // upload model matrix to shader
       glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-      // extra matrix for normal transformation to keep them orthogonal to surface
+      // extra matrix for normal transformation to keep them orthogonal to surface - currently not needed
       //glm::fmat4 normal_matrix = glm::inverseTranspose(glm::inverse(m_view_transform) * model_matrix);
-      glm::fmat4 normal_matrix = glm::inverseTranspose(view_matrix * model_matrix);
-      glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normal_matrix));
+      //glm::fmat4 normal_matrix = glm::inverseTranspose(view_matrix * model_matrix);
+      //glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
       // bind the VAO to draw
       glBindVertexArray(planet_object.vertex_AO);
@@ -405,7 +405,7 @@ void ApplicationSolar::initializeShaderPrograms()
                                           m_resource_path + "shaders/sun.frag"});
 
   // request uniform locations for planet shader program
-  m_shaders.at("planet").u_locs["NormalMatrix"] = -1;
+  //m_shaders.at("planet").u_locs["NormalMatrix"] = -1; // not needed currently
   m_shaders.at("planet").u_locs["ModelMatrix"] = -1;
   m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
   m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
@@ -742,18 +742,6 @@ void ApplicationSolar::initializePlanets()
   sun->addMoon(saturn);
   sun->addMoon(uranus);
   sun->addMoon(neptun);
-
-  /*
-  // old settings
-  planets.push_back(mercury);
-  planets.push_back(venus);
-  planets.push_back(earth);
-  planets.push_back(mars);
-  planets.push_back(jupiter);
-  planets.push_back(saturn);
-  planets.push_back(uranus);
-  planets.push_back(neptun);
-  */
 
 
   // test debug

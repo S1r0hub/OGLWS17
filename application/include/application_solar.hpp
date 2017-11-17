@@ -79,7 +79,6 @@ class ApplicationSolar : public Application
 
     // deque holding pointers for the planet and sun objects
     std::shared_ptr<Planet> sun;
-    //std::deque<std::shared_ptr<Planet>> planets;
 
     // definition of pi needed for rotation
     float MATH_HALF_PI = glm::half_pi<float>();

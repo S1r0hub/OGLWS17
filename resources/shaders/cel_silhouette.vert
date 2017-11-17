@@ -11,7 +11,7 @@ uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform vec3 BorderColor;
 
-// TODO: to be added as uniform
+// maybe: to be added as uniform
 const float borderThickness = 0.02;
 
 out vec3 color;
