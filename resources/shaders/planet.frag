@@ -12,13 +12,17 @@ in vec2 texCoord;
 uniform bool useTexture;
 uniform sampler2D tex;
 
+uniform sampler2D tex_night;          // nightmap - e.g. for earth
+uniform bool hasTex_night;            // if the night texture is available
+const float nightmapIntensity = 0.5;  // strength of the nightmap
+
 
 // blinn phong shading settings
 const vec3 lightPos = vec3(0.0, 0.0, 0.0);
 const vec3 specularColor = vec3(1.0, 1.0, 1.0);
 const float sunIntensity = 1.0;
 const float shininess = 80.0;
-const float ambIntensity = 0.00005;
+const float ambIntensity = 0.01;
 const float diffIntensity = 1.0;
 const float specIntensity = 0.5;
 
@@ -67,10 +71,6 @@ void main()
   vec3 combinedColor = bps.x * planetColor +
                        bps.y * specularColor;
 
-  // apply a screen gamma
-  float screenGamma = 2.2;
-  combinedColor = pow(combinedColor, vec3(1.0/screenGamma));
-
 
   vec4 finalColor = vec4(combinedColor, 1.0);
 
@@ -78,7 +78,14 @@ void main()
   if (useTexture)
   {
     // texture only
-    finalColor = texture(tex, texCoord) * vec4((bps.x * vec3(1.0, 1.0, 1.0)), 1.0);
+    vec3 white = vec3(1.0, 1.0, 1.0);
+    finalColor = texture(tex, texCoord) * vec4((bps.x * white), 1.0);
+
+    if (hasTex_night)
+    {
+      float rim = clamp(smoothstep(0.8, 1.1, (1.0 - bps.x)), 0.0, 1.0);
+      finalColor += texture(tex_night, texCoord) * vec4((rim * white * nightmapIntensity), 1.0);
+    }
 
     // texture mixed with planet color
     //finalColor = texture(tex, texCoord) * finalColor;

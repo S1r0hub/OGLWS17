@@ -4,7 +4,7 @@
 // Marcel H. (116610)
 
 
-#include "Planet.hpp"
+#include "planet.hpp"
 
 
 // CONSTRUCTOR
@@ -75,8 +75,21 @@ bool Planet::isSun() { return sun;  }
 
 
 // TEXTURE GETTER
-int Planet::getTextureID() { return texture_id; }
-bool Planet::hasTexture() { return hasTex; }
+texture_info Planet::getTextureInfo(std::string type)
+{
+  if (textures.find(type) != textures.end())
+  {
+    texture_info info = textures.at(type); 
+    if (info.index >= 0) { return info; }
+  }
+  return texture_info{-1, 0, ""};
+}
+
+bool Planet::hasTexture(std::string type)
+{
+  if (getTextureInfo(type).index >= 0) { return true; }
+  return false;
+}
 
 
 
@@ -109,12 +122,8 @@ void Planet::setColor(int r, int g, int b)
 void Planet::isSun(bool isASun) { sun = isASun; }
 
 // TEXTURE SETTER
-void Planet::setTextureID(int ID)
-{
-  if (ID < 0) { texture_id = -1; hasTex = false; return; }
-  texture_id = ID;
-  hasTex = true;
-}
+void Planet::setTexture(texture_info info, std::string type)
+{ textures[type] = info; }
 
 
 

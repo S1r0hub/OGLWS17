@@ -15,6 +15,8 @@
 #include <deque>
 #include <memory>
 #include <vector>
+#include <map>
+#include "texture_info.hpp" // included for texturing
 
 
 // A struct holding information about a planet.
@@ -86,14 +88,17 @@ class Planet
 
     // set the texture object for this planet
     // this will also set useTexture to true if the ID <= 0
-    void setTextureID(int ID);
+    // type = diffuse (default), normal, specular, ...
+    void setTexture(texture_info info, std::string type = "diffuse");
 
     // returns the ID of the texture or -1 if not set!
-    int getTextureID();
+    // type = diffuse (default), normal, specular, ...
+    texture_info getTextureInfo(std::string type = "diffuse");
     
     // Tells if the texture is available or not.
     // The returned value wont be "true" until the texture ID is set!
-    bool hasTexture();
+    // type = diffuse (default), normal, specular, ...
+    bool hasTexture(std::string type = "diffuse");
 
 
   private:
@@ -160,12 +165,11 @@ class Planet
     // planet color
     float planetColor[3] = { 0, 0, 0 };
 
-    // tells if this planet emits light
+    // tells if this planet should use the sun shader
     bool sun = false;
 
-    // holds image data
-    int texture_id = -1;
-    bool hasTex = false;
+    // holds the index of the texture loaded in the application
+    std::map<std::string, texture_info> textures;
 };
 
 #endif

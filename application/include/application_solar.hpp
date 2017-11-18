@@ -22,6 +22,9 @@
 #include <time.h> // for random seed
 #include <vector>
 
+// added for assignment 4
+#include "texture_info.hpp"
+
 
 // gpu representation of model
 class ApplicationSolar : public Application
@@ -75,7 +78,7 @@ class ApplicationSolar : public Application
   private:
 
     // simulation speed used by planets (1 = real time) (use around 1 million)
-    double time_multiplier = 1000;
+    double time_multiplier = 10000;
 
     // deque holding pointers for the planet and sun objects
     std::shared_ptr<Planet> sun;
@@ -132,8 +135,11 @@ class ApplicationSolar : public Application
     // Will also add the texture unit ID to the list so
     // all the textures will be deleted on destructor call.
     // Returns -1 if loading the texture failed!
-    int loadTexture(const std::string& path);
+    texture_info loadTexture(const std::string& path, int textureUnit = 0);
     std::vector<GLuint> loaded_textures;
+
+    // to reduce multiple calls of glUseProgram when the same program was loaded before
+    mutable std::string lastProg = "";
 };
 
 #endif
