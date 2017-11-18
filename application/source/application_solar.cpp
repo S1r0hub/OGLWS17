@@ -28,6 +28,11 @@ using namespace gl;
 #include <glm/gtc/matrix_access.hpp>
 
 
+// include texture loader
+#include <texture_loader.hpp>
+
+
+
 ApplicationSolar::ApplicationSolar(std::string const& resource_path)
  :Application{resource_path}
 {
@@ -107,12 +112,29 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       // we would prefer to pass a vector here but the assignment tells us to use Uniform3f
       glUniform3f(m_shaders.at("planet").u_locs.at("Color"), planetColor[0], planetColor[1], planetColor[2]);
 
-      // upload texture
-      GLuint color_sampler_location = glGetUniformLocation(m_shaders.at("planet").handle, "ColorTex");
+
+
+      // =============== TEXTURING =============== //
+
+      bool hasTex = planet->hasTexture() && useTextures;
+
+      if (hasTex)
+      {
+        // get the uniform location for the texture from the shader
+        GLuint sampler_location = glGetUniformLocation(m_shaders.at("planet").handle, "tex");
       
-      // use TEXTURE0 and thus upload 0 at glUniform1i as well
-      glActiveTexture(GL_TEXTURE0);
-      glUniform1i(color_sampler_location, 0);
+        // use TEXTURE0 and thus, upload 0 at glUniform1i as well
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, loaded_textures.at(planet->getTextureID()));
+        glUniform1i(sampler_location, 0);
+      }
+
+      // upload information whether or not to use the texture
+      glUniform1i(m_shaders.at("planet").u_locs.at("useTexture"), hasTex);
+
+      // ========================================= //
+
+
 
       // upload model matrix to shader
       glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
@@ -300,37 +322,41 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
       case GLFW_KEY_LEFT_SHIFT: moveFast = active; break;
 
       case GLFW_KEY_1:
-        if (shadingMode == 0) { break; }
+        if (shadingMode == 0 || !active) { break; }
         std::cout << "Using Blinn Phong Shading now." << std::endl;
         shadingMode = 0;
         break;
 
       case GLFW_KEY_2:
-        if (shadingMode == 1) { break; }
+        if (shadingMode == 1 || !active) { break; }
         std::cout << "Using Cel Shading now." << std::endl;
         shadingMode = 1;
         break;
 
       case GLFW_KEY_T:
-        // to enable/disable textures
-        useTextures = !useTextures;
-        glUseProgram(m_shaders.at("planet").handle);
-        glUniform1i(m_shaders.at("planet").u_locs["useTexture"], useTextures);
-        std::cout << "Textures " << (useTextures ? "enabled" : "disabled") << std::endl;
+        if (active)
+        {
+          // to enable/disable textures
+          useTextures = !useTextures;
+          std::cout << "Textures " << (useTextures ? "enabled" : "disabled") << std::endl;
+        }
         break;
 
       case GLFW_KEY_P:
-        // debug - to check camera position and view matrix
-        std::cout << "--------------------" << std::endl;
-        std::cout << "View Mat:" << std::endl;
-        std::cout << glm::to_string(view_matrix) << std::endl;
-        std::cout << "Camera Position:" << std::endl;
-        glm::fmat4 ivm = glm::inverse(view_matrix);
-        glm::fvec4 camPos = glm::column(ivm, 3);
-        std::cout << glm::to_string(camPos) << std::endl;
-        std::cout << "Camera Position Normalized:" << std::endl;
-        std::cout << glm::to_string(glm::normalize(camPos)) << std::endl;
-        std::cout << "--------------------" << std::endl;
+        if (active)
+        {
+          // debug - to check camera position and view matrix
+          std::cout << "--------------------" << std::endl;
+          std::cout << "View Mat:" << std::endl;
+          std::cout << glm::to_string(view_matrix) << std::endl;
+          std::cout << "Camera Position:" << std::endl;
+          glm::fmat4 ivm = glm::inverse(view_matrix);
+          glm::fvec4 camPos = glm::column(ivm, 3);
+          std::cout << glm::to_string(camPos) << std::endl;
+          std::cout << "Camera Position Normalized:" << std::endl;
+          std::cout << glm::to_string(glm::normalize(camPos)) << std::endl;
+          std::cout << "--------------------" << std::endl;
+        }
         break;
     }
   }
@@ -485,7 +511,7 @@ void ApplicationSolar::initializeGeometry()
 {  
   model planet_model;
 
-  planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL | model::TEXCOORD);
+  planet_model = model_loader::obj(m_resource_path + "models/sphere_own_uv.obj", model::NORMAL | model::TEXCOORD);
 
   // old version without textures
   //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
@@ -726,9 +752,6 @@ void ApplicationSolar::initializePlanets()
   // real day time of moons (in days)
   float dt_m_earth = 0; // it's actually 27.3 (same as orbit time), 0 does the same in this case
 
-  // test debug
-  std::cout << "Sun has a size of " << size_sun << std::endl;
-
 
   // create all the planets and set their attributes
   sun = std::make_shared<Planet>("Sun", size_sun, ot_sun, dt_sun);
@@ -737,33 +760,40 @@ void ApplicationSolar::initializePlanets()
   
   std::shared_ptr<Planet> mercury = std::make_shared<Planet>("Mercury", size_mercury, ot_mercury, dt_mercury, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_mercury });
   mercury->setColor(204, 151, 82);
-  
+  mercury->setTextureID(loadTexture(m_resource_path + "textures/mercury.png"));
+
   std::shared_ptr<Planet> venus = std::make_shared<Planet>("Venus", size_venus, ot_venus, dt_venus, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_venus });
   venus->setColor(254, 96, 30);
+  venus->setTextureID(loadTexture(m_resource_path + "textures/venus.png"));
 
   std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_earth });
   earth->setColor(50, 50, 255);
-  //earth->loadTexture("texture/earth.jpg"); // TODO
+  earth->setTextureID(loadTexture(m_resource_path + "textures/earth.png"));
   
-
   std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_m_earth });
   moon1->setColor(50, 50, 50);
+  moon1->setTextureID(loadTexture(m_resource_path + "textures/moon.png"));
   earth->addMoon(moon1);
     
   std::shared_ptr<Planet> mars = std::make_shared<Planet>("Mars", size_mars, ot_mars, dt_mars, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_mars });
   mars->setColor(200, 100, 50);
-  
+  mars->setTextureID(loadTexture(m_resource_path + "textures/mars.png"));
+
   std::shared_ptr<Planet> jupiter = std::make_shared<Planet>("Jupiter", size_jupiter, ot_jupiter, dt_jupiter, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_jupiter });
   jupiter->setColor(200, 110, 38);
+  jupiter->setTextureID(loadTexture(m_resource_path + "textures/jupiter.png"));
   
   std::shared_ptr<Planet> saturn = std::make_shared<Planet>("Saturn", size_saturn, ot_saturn, dt_saturn, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_saturn });
   saturn->setColor(250, 200, 120);
-  
+  saturn->setTextureID(loadTexture(m_resource_path + "textures/saturn.png"));
+
   std::shared_ptr<Planet> uranus = std::make_shared<Planet>("Uranus", size_uranus, ot_uranus, dt_uranus, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_uranus });
   uranus->setColor(90, 130, 250);
-  
-  std::shared_ptr<Planet> neptun = std::make_shared<Planet>("Neptun", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_neptune });
-  neptun->setColor(100, 120, 200);
+  uranus->setTextureID(loadTexture(m_resource_path + "textures/uranus.png"));
+
+  std::shared_ptr<Planet> neptune = std::make_shared<Planet>("Neptune", size_uranus, ot_neptune, dt_neptune, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_neptune });
+  neptune->setColor(100, 120, 200);
+  neptune->setTextureID(loadTexture(m_resource_path + "textures/neptune.png"));
 
   // add colors to list of planets that we want to render
   sun->addMoon(mercury);
@@ -773,16 +803,83 @@ void ApplicationSolar::initializePlanets()
   sun->addMoon(jupiter);
   sun->addMoon(saturn);
   sun->addMoon(uranus);
-  sun->addMoon(neptun);
+  sun->addMoon(neptune);
 
 
   // test debug
-  std::cout << "Rotation angle for \"" << sun->getName() << "\" per second is: " << sun->getRotationAngle(time_multiplier) << std::endl;
+  std::cout << "(i) Sun has a size of " << size_sun << std::endl;
+  std::cout << "(i) Rotation angle for \"" << sun->getName() << "\" per second is: " << sun->getRotationAngle(time_multiplier) << std::endl;
+  std::cout << "(i) Textures loaded: " << loaded_textures.size() << std::endl;
 }
+
+
+// Loads a texture and returns the texture unit ID.
+// (ID = Index in loaded textures vector!)
+// Returns -1 if loading failed!
+int ApplicationSolar::loadTexture(const std::string& path)
+{
+  // Part of the stbi documentation, but we can use the given texture_loade instead.
+  // int x,y,n;
+  // unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
+  // // ... process data if not NULL ...
+  // // ... x = width, y = height, n = # 8-bit components per pixel ...
+  // // ... replace '0' with '1'..'4' to force that many components per pixel
+  // // ... but 'n' will always be the number that it would have been if you said 0
+  // stbi_image_free(data)
+
+  // try to load the texture by the given path
+  // and catch all possible exceptions
+  try
+  {
+    pixel_data image = texture_loader::file(path);
+
+    GLuint texID;
+    glGenTextures(1, &texID);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    glTexImage2D(GL_TEXTURE_2D,       // target
+                 0,                   // level (level-of-detail number) (mipmap reduction)
+                 image.channels,      // internalFormat (number of color components)
+                 image.width,         // width
+                 image.height,        // height
+                 0,                   // border (must be 0)
+                 image.channels,      // format of the pixel data
+                 image.channel_type,  // type (data type of pixel data) (GL_UNSIGNED_BYTE...)
+                 image.ptr());        // data (pointer to the image data in memory)
+
+    // set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // add to loaded textures vector
+    loaded_textures.push_back(texID);
+
+    std::cout << "Successful loaded texture \"" + path + "\"." << std::endl;
+
+    // return where the texID is stored in the vector (the index)
+    return loaded_textures.size()-1;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Loading texture \"" << path << "\" failed!\n"
+              << e.what() << std::endl;
+  }
+
+  return -1;
+}
+
 
 
 ApplicationSolar::~ApplicationSolar()
 {
+  // clean up loaded textures
+  glDeleteTextures(loaded_textures.size(), loaded_textures.data());
+
   // planets
   glDeleteBuffers(1, &planet_object.vertex_BO);
   glDeleteBuffers(1, &planet_object.element_BO);

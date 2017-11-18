@@ -7,6 +7,11 @@ in vec3 vWorldPos;
 in vec3 vWorldNormal;
 in vec3 camPos;
 
+// for texturing
+in vec2 texCoord;
+uniform bool useTexture;
+uniform sampler2D tex;
+
 
 // blinn phong shading settings
 const vec3 lightPos = vec3(0.0, 0.0, 0.0);
@@ -57,6 +62,7 @@ void main()
   // blinn phong shading
   vec2 bps = blinnPhong(lightDir, viewDir, sunIntensity, ambIntensity, diffIntensity, specIntensity);
 
+
   // combine the shading with the colors
   vec3 combinedColor = bps.x * planetColor +
                        bps.y * specularColor;
@@ -65,6 +71,20 @@ void main()
   float screenGamma = 2.2;
   combinedColor = pow(combinedColor, vec3(1.0/screenGamma));
 
+
+  vec4 finalColor = vec4(combinedColor, 1.0);
+
+  // apply the texture instead of the default diffuse color
+  if (useTexture)
+  {
+    // texture only
+    finalColor = texture(tex, texCoord) * vec4((bps.x * vec3(1.0, 1.0, 1.0)), 1.0);
+
+    // texture mixed with planet color
+    //finalColor = texture(tex, texCoord) * finalColor;
+  }
+
+
   // use the calculated color for the fragment
-  out_Color = vec4(combinedColor, 1.0);
+  out_Color = vec4(finalColor);
 }

@@ -75,7 +75,7 @@ class ApplicationSolar : public Application
   private:
 
     // simulation speed used by planets (1 = real time) (use around 1 million)
-    double time_multiplier = 100000;
+    double time_multiplier = 1000;
 
     // deque holding pointers for the planet and sun objects
     std::shared_ptr<Planet> sun;
@@ -123,8 +123,17 @@ class ApplicationSolar : public Application
     mutable float deltaTime = 0.0;
     mutable double lastTimestamp = -1.0;
 
-    // whether or not to use textures (can be changed by user pressing T)
-    bool useTextures = false;
+
+    // whether or not to use textures (can be changed by user pressing the key <T>)
+    bool useTextures = true;
+
+    // Loads a texture and returns the texture unit ID.
+    // (ID = Index in loaded textures vector!)
+    // Will also add the texture unit ID to the list so
+    // all the textures will be deleted on destructor call.
+    // Returns -1 if loading the texture failed!
+    int loadTexture(const std::string& path);
+    std::vector<GLuint> loaded_textures;
 };
 
 #endif

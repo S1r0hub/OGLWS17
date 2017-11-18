@@ -4,6 +4,7 @@
 // vertex attributes of VAO
 layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec3 in_Normal;
+layout(location = 2) in vec2 in_texCoord;
 
 
 //Matrix Uniforms as specified with glUniformMatrix4fv
@@ -13,10 +14,6 @@ uniform mat4 ProjectionMatrix;
 //uniform mat4 NormalMatrix;
 uniform vec3 Color;
 
-// texture concerning
-uniform bool useTexture;
-uniform sampler2D tex;
-
 
 //out vec3 pass_Normal;
 out vec3 planetColor;
@@ -25,21 +22,17 @@ out vec3 vWorldPos;
 out vec3 vWorldNormal;
 out vec3 camPos;
 
+// texture coordinates
+out vec2 texCoord;
+
 
 void main(void)
 {
   //pass_Normal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
+  planetColor = Color;
 
-
-  // switch between texture and simple color
-  if (useTexture)
-  {
-    planetColor = texture(tex, texCoords);
-  }
-  else
-  {
-    planetColor = Color;
-  }
+  // for texturing
+  texCoord = in_texCoord;
 
 
   // calculate camera position (another way)

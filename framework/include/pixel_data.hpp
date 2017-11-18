@@ -38,9 +38,10 @@ struct pixel_data {
   std::size_t height;
   std::size_t depth;
 
-  // channel format
-  GLenum channels; 
-  // pixel format
+  // pixel format (RGB...)
+  GLenum channels;
+
+  // channel format (GL_UNSIGNED_BYTE)
   GLenum channel_type; 
 };
 

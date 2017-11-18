@@ -45,7 +45,12 @@ class Planet
     // in range of 0 to 255
     void setColor(int r, int g, int b);
 
+    // set if this planet is a sun and thus should use the sun shader
     void isSun(bool isASun);
+
+    // set if a texture should be used or not
+    void useTexture(bool use);
+
 
 
     // GETTER
@@ -78,11 +83,17 @@ class Planet
 
     glm::fmat4 getModelMatrix();
 
-    // loads a texture and returns true if the process was successful
-    bool loadTexture(const char*, int width, int height, int bit = 16);
 
-    // returns pixel data as an unsigned char * or a nullptr if loading failed
-    unsigned char* getTextureData();
+    // set the texture object for this planet
+    // this will also set useTexture to true if the ID <= 0
+    void setTextureID(int ID);
+
+    // returns the ID of the texture or -1 if not set!
+    int getTextureID();
+    
+    // Tells if the texture is available or not.
+    // The returned value wont be "true" until the texture ID is set!
+    bool hasTexture();
 
 
   private:
@@ -153,7 +164,8 @@ class Planet
     bool sun = false;
 
     // holds image data
-    unsigned char* imageData = nullptr;
+    int texture_id = -1;
+    bool hasTex = false;
 };
 
 #endif
