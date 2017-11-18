@@ -156,7 +156,7 @@ class Planet
     float orbitColor[3] = { 255, 255, 255 };
 
     // number of orbit segments per circumference
-    float orbitSegments = 1.f;
+    float orbitSegments = 1.5f;
     unsigned int orbitSegmentsMin = 32;
 
     // points that form the orbit
