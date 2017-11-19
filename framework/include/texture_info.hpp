@@ -8,6 +8,7 @@
 #define SOLAR_SYS_TEXTURE_INFO
 
 #include <string>
+#include <vector>
 
 // Struct that holds texture information
 struct texture_info
@@ -24,9 +25,17 @@ struct texture_info
     , path(path_)
   {}
 
+  texture_info(int index_, int unit_, std::vector<std::string> paths_)
+    : index(index_)
+    , unit(unit_)
+    , path("")
+    , paths(paths_)
+  {}
+
   int index;
   int unit;
   std::string path;
+  std::vector<std::string> paths; // needed for cubemaps
 };
 
 #endif

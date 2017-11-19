@@ -60,6 +60,9 @@ class ApplicationSolar : public Application
     // render stars and upload information to gpu
     void renderStars() const;
 
+    // render the skybox
+    void renderSkybox() const;
+
 
   protected:
 
@@ -67,12 +70,14 @@ class ApplicationSolar : public Application
     void initializeGeometry();
     void initializePlanets();
     void initializeStars();
+    void initializeSkybox();
     void updateView();
     void move();
 
     // cpu representation of model
     model_object planet_object;
     model_object stars{};
+    model_object skybox_object;
 
 
   private:
@@ -110,10 +115,10 @@ class ApplicationSolar : public Application
     // store information about how the movement should be done
     glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
 
-    unsigned int starCount = 10000;
+    unsigned int starCount = 5000;
     float starSize = 1.f;
-    int starDistance_min = 30;
-    int starDistance_max = 100;
+    int starDistance_min = 40;
+    int starDistance_max = 200;
 
     glm::mat4 view_matrix{};
 
@@ -125,6 +130,10 @@ class ApplicationSolar : public Application
     // mutable because we have to change it in the const render function
     mutable float deltaTime = 0.0;
     mutable double lastTimestamp = -1.0;
+
+
+    // vector that holds the name of shader programs to which the view matrix should be uploaded
+    std::vector<std::string> updateViewFor;
 
 
     // whether or not to use textures (can be changed by user pressing the key <T>)
@@ -140,6 +149,12 @@ class ApplicationSolar : public Application
 
     // to reduce multiple calls of glUseProgram when the same program was loaded before
     mutable std::string lastProg = "";
+
+    // hold information like index of the textures stored in loaded_textures
+    bool showSkybox = true; // to activate/deactivate rendering of the skybox
+    texture_info loadCubemap(const std::vector<std::string>& paths, int textureUnit = 0);
+    texture_info skyboxTexture;
+    glm::fmat4 skyboxModelMatrix{};
 };
 
 #endif

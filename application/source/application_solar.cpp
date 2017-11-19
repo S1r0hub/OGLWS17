@@ -40,6 +40,7 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
   initializeShaderPrograms();
   initializeStars();
   initializePlanets();
+  initializeSkybox();
 }
 
 
@@ -112,6 +113,9 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       {
         glUseProgram(m_shaders.at("planet").handle);
         lastProg = "planet";
+
+        glEnable(GL_CULL_FACE);  // enable culling
+        glCullFace(GL_BACK);     // cull back faces so we don't render back faces
       }
 
       // we would prefer to pass a vector here but the assignment tells us to use Uniform3f
@@ -176,7 +180,6 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 
       // draw bound vertex array using bound shader
       //glEnable(GL_DEPTH_TEST); // already enabled by launcher.cpp render function
-      glEnable(GL_CULL_FACE);  // enable culling so we don't render back faces
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
     }
     else if (shadingMode == 1) // cel shading
@@ -257,9 +260,43 @@ void ApplicationSolar::renderStars() const
 }
 
 
+void ApplicationSolar::renderSkybox() const
+{
+  if (!showSkybox) { return; }
+
+  // the case that the cubemap failed loading
+  if (skyboxTexture.index < 0) { return; }
+
+
+  // use skybox shader program
+  glUseProgram(m_shaders.at("skybox").handle);
+  lastProg = "skybox";
+
+  // bind the VAO to draw
+  glBindVertexArray(skybox_object.vertex_AO);
+
+  glUniformMatrix4fv(m_shaders.at("skybox").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(skyboxModelMatrix));
+
+  // apply cubemap texture
+  GLuint sampler_loc = m_shaders.at("skybox").u_locs.at("Skybox");
+      
+  // bind the correct cubemap texture for usage
+  glActiveTexture(GL_TEXTURE0 + skyboxTexture.unit);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, loaded_textures.at(skyboxTexture.index));
+  glUniform1i(sampler_loc, skyboxTexture.unit);
+
+  // draw bound vertex array using bound shader
+  glCullFace(GL_FRONT);     // enable culling of front faces (render back faces)
+  glDisable(GL_DEPTH_TEST);
+  glDrawElements(skybox_object.draw_mode, skybox_object.num_elements, model::INDEX.type, NULL);
+  glEnable(GL_DEPTH_TEST);
+}
+
+
 void ApplicationSolar::render() const
 {
-  renderStars();
+  renderSkybox();    // render the skybox
+  renderStars();     // render all stars
   renderObject(sun); // render the sun and all their planets with their moons
   renderOrbits(sun); // render the orbits of all the planets and the moons
 
@@ -273,6 +310,7 @@ void ApplicationSolar::render() const
 }
 
 
+// update view matrix of all shader programs
 void ApplicationSolar::updateView()
 {
   // rotate the camera now also around the x-axis using the rotationVectorX
@@ -291,51 +329,38 @@ void ApplicationSolar::updateView()
   // undo the matrix x-axis rotation to avoid weird camera behavoir next rotation (this will lock z-axis)
   m_view_transform = glm::rotate(m_view_transform, -cameraRotationX, glm::fvec3{1.0f, 0.0f, 0.0f});
 
+
   // upload view matrix to gpu
-  glUseProgram(m_shaders.at("planet").handle);
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
-  
-  glUseProgram(m_shaders.at("sun").handle);
-  glUniformMatrix4fv(m_shaders.at("sun").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
-
-  glUseProgram(m_shaders.at("stars").handle);
-  glUniformMatrix4fv(m_shaders.at("stars").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
-
-  glUseProgram(m_shaders.at("orbits").handle);
-  glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
-
-  glUseProgram(m_shaders.at("celSilhouette").handle);
-  glUniformMatrix4fv(m_shaders.at("celSilhouette").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
-
-  glUseProgram(m_shaders.at("celColor").handle);
-  glUniformMatrix4fv(m_shaders.at("celColor").u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
+  for (const std::string& prog : updateViewFor)
+  {
+    glUseProgram(m_shaders.at(prog).handle);
+    glUniformMatrix4fv(m_shaders.at(prog).u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
+  }
 
   lastProg = "";
 }
 
 
+// update projection matrix of all shader programs
 void ApplicationSolar::updateProjection()
 {
   // upload projection matrix to gpu
-  glUseProgram(m_shaders.at("planet").handle);
-  glUniformMatrix4fv(m_shaders.at("planet").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
-  
-  glUseProgram(m_shaders.at("sun").handle);
-  glUniformMatrix4fv(m_shaders.at("sun").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
+  std::vector<std::string> progs;
+  progs.push_back("planet");
+  progs.push_back("sun");
+  progs.push_back("stars");
+  progs.push_back("orbits");
+  progs.push_back("celSilhouette");
+  progs.push_back("celColor");
+  progs.push_back("skybox");
 
-  glUseProgram(m_shaders.at("stars").handle);
-  glUniformMatrix4fv(m_shaders.at("stars").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
+  for (const std::string& prog : progs)
+  {
+    glUseProgram(m_shaders.at(prog).handle);
+    glUniformMatrix4fv(m_shaders.at(prog).u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
+  }
 
-  glUseProgram(m_shaders.at("orbits").handle);
-  glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
-
-  glUseProgram(m_shaders.at("celSilhouette").handle);
-  glUniformMatrix4fv(m_shaders.at("celSilhouette").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
-
-  glUseProgram(m_shaders.at("celColor").handle);
-  glUniformMatrix4fv(m_shaders.at("celColor").u_locs.at("ProjectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_view_projection));
-
-  lastProg = "";
+  lastProg = ""; // so that next time a program needs to be used anyway
 }
 
 
@@ -455,7 +480,7 @@ void ApplicationSolar::move()
 }
 
 
-//handle delta mouse movement input
+// handle delta mouse movement input
 void ApplicationSolar::mouseCallback(double pos_x, double pos_y)
 {
   // left = pos_x = -1, right = pos_x = 1
@@ -541,18 +566,41 @@ void ApplicationSolar::initializeShaderPrograms()
   // shader for stars
   m_shaders.emplace("stars", shader_program{m_resource_path + "shaders/stars.vert",
                                             m_resource_path + "shaders/stars.frag"});
-  // uniform for star colors
+
   m_shaders.at("stars").u_locs["ViewMatrix"] = -1;
   m_shaders.at("stars").u_locs["ProjectionMatrix"] = -1;
+
 
 
   // shader for orbits
   m_shaders.emplace("orbits", shader_program{m_resource_path + "shaders/orbits.vert",
                                              m_resource_path + "shaders/orbits.frag"});
+
   m_shaders.at("orbits").u_locs["ModelMatrix"] = -1;
   m_shaders.at("orbits").u_locs["ViewMatrix"] = -1;
   m_shaders.at("orbits").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("orbits").u_locs["OrbitColor"] = -1;
+
+
+
+  // shader for skybox (assignment 4)
+  m_shaders.emplace("skybox", shader_program{m_resource_path + "shaders/skybox.vert",
+                                             m_resource_path + "shaders/skybox.frag"});
+
+  m_shaders.at("skybox").u_locs["ModelMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["ViewMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["ProjectionMatrix"] = -1;
+  m_shaders.at("skybox").u_locs["Skybox"] = -1;
+
+
+  // register programs to which the view matrix should be uploaded after changes
+  updateViewFor.push_back("planet");
+  updateViewFor.push_back("sun");
+  updateViewFor.push_back("stars");
+  updateViewFor.push_back("orbits");
+  updateViewFor.push_back("celSilhouette");
+  updateViewFor.push_back("celColor");
+  updateViewFor.push_back("skybox");
 }
 
 
@@ -619,6 +667,7 @@ void ApplicationSolar::initializeGeometry()
 }
 
 
+// generate stars
 void ApplicationSolar::initializeStars()
 {
   // vector including position and color of stars
@@ -926,6 +975,113 @@ texture_info ApplicationSolar::loadTexture(const std::string& path, int textureU
 }
 
 
+// Loads a cubemap and returns the texture information.
+// Returns texture_info with "index = -1" if loading failed!
+texture_info ApplicationSolar::loadCubemap(const std::vector<std::string>& paths, int textureUnit)
+{
+  std::string lastPathTried = "none";
+
+  try
+  {
+    GLuint texID;
+    glGenTextures(1, &texID);
+
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+
+    // load all textures
+    int i = 0;
+    for (const std::string& path : paths)
+    {
+      lastPathTried = path;
+      pixel_data image = texture_loader::file(path);
+
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i++,  // target
+                   0,                   // level (level-of-detail number) (mipmap reduction)
+                   image.channels,      // internalFormat (number of color components)
+                   image.width,         // width
+                   image.height,        // height
+                   0,                   // border (must be 0)
+                   image.channels,      // format of the pixel data
+                   image.channel_type,  // type (data type of pixel data) (GL_UNSIGNED_BYTE...)
+                   image.ptr());        // data (pointer to the image data in memory)
+    }
+
+    // set texture parameters
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // add to loaded textures vector
+    loaded_textures.push_back(texID);
+
+    std::cout << "Successfully loaded cubemap." << std::endl;
+
+    // return where the texID is stored in the vector (the index)
+    return texture_info{(int) loaded_textures.size() - 1, textureUnit, paths};
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Loading cubemap failed!\n"
+              << ">> Last path tried: " << lastPathTried << "\n"
+              << ">> " << e.what() << std::endl;
+  }
+
+  return texture_info{-1, textureUnit, paths};
+}
+
+
+void ApplicationSolar::initializeSkybox()
+{
+  model skybox_model = model_loader::obj(m_resource_path + "models/skybox.obj", model::TEXCOORD);
+
+  // generate vertex array object and bind it for attaching buffers
+  glGenVertexArrays(1, &skybox_object.vertex_AO);
+  glBindVertexArray(skybox_object.vertex_AO);
+
+  // generate vertex buffer object and bind it
+  glGenBuffers(1, &skybox_object.vertex_BO);
+  glBindBuffer(GL_ARRAY_BUFFER, skybox_object.vertex_BO);
+
+  // configure currently bound array buffer
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * skybox_model.data.size(), skybox_model.data.data(), GL_STATIC_DRAW);
+
+  // attributes
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, model::POSITION.components, model::POSITION.type, GL_FALSE, skybox_model.vertex_bytes, skybox_model.offsets[model::POSITION]);
+
+  // generate element buffer object and bind it
+  glGenBuffers(1, &skybox_object.element_BO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skybox_object.element_BO);
+
+  // configure currently bound array buffer
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, model::INDEX.size * skybox_model.indices.size(), skybox_model.indices.data(), GL_STATIC_DRAW);
+
+  // store type of primitive to draw
+  skybox_object.draw_mode = GL_TRIANGLES;
+
+  // transfer number of indices to model object 
+  skybox_object.num_elements = GLsizei(skybox_model.indices.size());
+
+  // load skybox textures
+  std::vector<std::string> skyboxTexturePaths;
+  std::string folder = "textures/skybox_04/";
+  skyboxTexturePaths.push_back(m_resource_path + folder + "left.png");    // left
+  skyboxTexturePaths.push_back(m_resource_path + folder + "right.png");   // right
+  skyboxTexturePaths.push_back(m_resource_path + folder + "bottom.png");  // bottom
+  skyboxTexturePaths.push_back(m_resource_path + folder + "top.png");     // top
+  skyboxTexturePaths.push_back(m_resource_path + folder + "back.png");    // back
+  skyboxTexturePaths.push_back(m_resource_path + folder + "front.png");   // front
+  
+  // create the cubemap using the paths from above
+  skyboxTexture = loadCubemap(skyboxTexturePaths);
+
+  skyboxModelMatrix = glm::rotate(skyboxModelMatrix, glm::pi<float>(), glm::fvec3(0.f, 0.f, 1.f));
+}
+
+
 
 ApplicationSolar::~ApplicationSolar()
 {
@@ -939,8 +1095,12 @@ ApplicationSolar::~ApplicationSolar()
   
   // stars
   glDeleteBuffers(1, &stars.vertex_BO);
-  //glDeleteBuffers(1, &stars.element_BO);
   glDeleteVertexArrays(1, &stars.vertex_AO);
+
+  // skybox
+  glDeleteBuffers(1, &skybox_object.vertex_BO);
+  glDeleteBuffers(1, &skybox_object.element_BO);
+  glDeleteVertexArrays(1, &skybox_object.vertex_AO);
 }
 
 
