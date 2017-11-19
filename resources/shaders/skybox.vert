@@ -8,15 +8,14 @@ uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
 
-out vec3 eyeDir;
+out vec3 TexCoords;
 
-// infos here https://gamedev.stackexchange.com/questions/60313/implementing-a-skybox-with-glsl-version-330
 void main(void)
 {
-  mat4 inverseProjection = inverse(ProjectionMatrix);
-  mat3 invModelView = mat3(inverse(ViewMatrix * ModelMatrix));
-  vec3 unProj = (inverseProjection * vec4(in_Position, 1.0)).xyz;
-  eyeDir = invModelView * unProj;
+  // get camera position from the view matrix
+  mat4 ivm = inverse(ViewMatrix);
+  vec3 camPos = ivm[3].xyz;
 
-  gl_Position = vec4(in_Position, 1.0);
+  TexCoords = vec3(in_Position.x, -in_Position.yz); // swap skybox because of opengl specification
+  gl_Position = (ProjectionMatrix * ViewMatrix * ModelMatrix) * vec4(in_Position + camPos, 1.0);
 }

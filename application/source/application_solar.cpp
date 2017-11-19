@@ -1065,20 +1065,19 @@ void ApplicationSolar::initializeSkybox()
   // transfer number of indices to model object 
   skybox_object.num_elements = GLsizei(skybox_model.indices.size());
 
-  // load skybox textures
+  // load skybox textures (order refers to the opengl specification for cubemaps!)
   std::vector<std::string> skyboxTexturePaths;
-  std::string folder = "textures/skybox_04/";
-  skyboxTexturePaths.push_back(m_resource_path + folder + "left.png");    // left
-  skyboxTexturePaths.push_back(m_resource_path + folder + "right.png");   // right
-  skyboxTexturePaths.push_back(m_resource_path + folder + "bottom.png");  // bottom
-  skyboxTexturePaths.push_back(m_resource_path + folder + "top.png");     // top
-  skyboxTexturePaths.push_back(m_resource_path + folder + "back.png");    // back
-  skyboxTexturePaths.push_back(m_resource_path + folder + "front.png");   // front
-  
+  std::string folder = "textures/skybox/debug/";
+  std::string ext = ".png";
+  skyboxTexturePaths.push_back(m_resource_path + folder + "right" + ext);   // +x
+  skyboxTexturePaths.push_back(m_resource_path + folder + "left" + ext);    // -x
+  skyboxTexturePaths.push_back(m_resource_path + folder + "bottom" + ext);  // +y
+  skyboxTexturePaths.push_back(m_resource_path + folder + "top" + ext);     // -y
+  skyboxTexturePaths.push_back(m_resource_path + folder + "back" + ext);    // +z
+  skyboxTexturePaths.push_back(m_resource_path + folder + "front" + ext);   // -z
+
   // create the cubemap using the paths from above
   skyboxTexture = loadCubemap(skyboxTexturePaths);
-
-  skyboxModelMatrix = glm::rotate(skyboxModelMatrix, glm::pi<float>(), glm::fvec3(0.f, 0.f, 1.f));
 }
 
 
