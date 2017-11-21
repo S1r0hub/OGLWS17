@@ -44,6 +44,18 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path)
 }
 
 
+bool ApplicationSolar::useShader(std::string shaderName) const
+{
+  if (lastProg != shaderName)
+  {
+    glUseProgram(m_shaders.at(shaderName).handle);
+    lastProg = shaderName;
+    return true;
+  }
+  return false;
+}
+
+
 void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 {
   // set the origin of the planet (where it will rotate around)
@@ -84,11 +96,7 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
   if (planet->isSun()) // use sun shader
   {
     // use sun shader program
-    if (lastProg != "sun")
-    {
-      glUseProgram(m_shaders.at("sun").handle);
-      lastProg = "sun";
-    }
+    useShader("sun");
 
     // we would prefer to pass a vector here but the assignment tells us to use Uniform3f
     glUniform3f(m_shaders.at("sun").u_locs.at("Color"), planetColor[0], planetColor[1], planetColor[2]);
@@ -109,11 +117,8 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
     // render planets and moons
     if (shadingMode == 0) // blinn phong shading
     {
-      if (lastProg != "planet")
+      if (useShader("planet"))
       {
-        glUseProgram(m_shaders.at("planet").handle);
-        lastProg = "planet";
-
         glEnable(GL_CULL_FACE);  // enable culling
         glCullFace(GL_BACK);     // cull back faces so we don't render back faces
       }
@@ -184,13 +189,11 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
     }
     else if (shadingMode == 1) // cel shading
     {
-      lastProg = "celColor";
-
       // bind the VAO to draw
       glBindVertexArray(planet_object.vertex_AO);
 
       // 1. draw the silhouette
-      glUseProgram(m_shaders.at("celSilhouette").handle);
+      useShader("celSilhouette");
       glUniform3fv(m_shaders.at("celSilhouette").u_locs.at("BorderColor"), 1, borderColor.data());
       glUniformMatrix4fv(m_shaders.at("celSilhouette").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
   
@@ -201,7 +204,7 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
 
       // 2. draw the cel shading color
-      glUseProgram(m_shaders.at("celColor").handle);
+      useShader("celColor");
       glUniform3f(m_shaders.at("celColor").u_locs.at("Color"), planetColor[0], planetColor[1], planetColor[2]);
       glUniformMatrix4fv(m_shaders.at("celColor").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
@@ -227,12 +230,7 @@ void ApplicationSolar::renderOrbits(std::shared_ptr<Planet> planet) const
   if (planet->getOrbitPointCount() <= 0) { return; }
 
   // RENDER ORBITS
-  if (lastProg != "orbits")
-  {
-    glUseProgram(m_shaders.at("orbits").handle);
-    lastProg = "orbits";
-  }
-  
+  useShader("orbits");
   glUniform3fv(m_shaders.at("orbits").u_locs.at("OrbitColor"), 1, planet->getOrbitColor());
   glUniformMatrix4fv(m_shaders.at("orbits").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(planet->getModelMatrix()));
 
@@ -247,11 +245,7 @@ void ApplicationSolar::renderOrbits(std::shared_ptr<Planet> planet) const
 void ApplicationSolar::renderStars() const
 {
   // use the shader program for the stars
-  if (lastProg != "stars")
-  {
-    glUseProgram(m_shaders.at("stars").handle);
-    lastProg = "stars";
-  }
+  useShader("stars");
 
   // bind the VAO to draw, set the point size and draw
   glBindVertexArray(stars.vertex_AO);
@@ -269,8 +263,7 @@ void ApplicationSolar::renderSkybox() const
 
 
   // use skybox shader program
-  glUseProgram(m_shaders.at("skybox").handle);
-  lastProg = "skybox";
+  useShader("skybox");
 
   // bind the VAO to draw
   glBindVertexArray(skybox_object.vertex_AO);
@@ -286,6 +279,7 @@ void ApplicationSolar::renderSkybox() const
   glUniform1i(sampler_loc, skyboxTexture.unit);
 
   // draw bound vertex array using bound shader
+  glEnable(GL_CULL_FACE);   // enable culling
   glCullFace(GL_FRONT);     // enable culling of front faces (render back faces)
   glDisable(GL_DEPTH_TEST);
   glDrawElements(skybox_object.draw_mode, skybox_object.num_elements, model::INDEX.type, NULL);
@@ -337,7 +331,7 @@ void ApplicationSolar::updateView()
     glUniformMatrix4fv(m_shaders.at(prog).u_locs.at("ViewMatrix"), 1, GL_FALSE, glm::value_ptr(view_matrix));
   }
 
-  lastProg = "";
+  lastProg = ""; // so that next time a program needs to be used anyway
 }
 
 
@@ -1067,7 +1061,7 @@ void ApplicationSolar::initializeSkybox()
 
   // load skybox textures (order refers to the opengl specification for cubemaps!)
   std::vector<std::string> skyboxTexturePaths;
-  std::string folder = "textures/skybox/debug/";
+  std::string folder = "textures/skybox/stars_02/";
   std::string ext = ".png";
   skyboxTexturePaths.push_back(m_resource_path + folder + "right" + ext);   // +x
   skyboxTexturePaths.push_back(m_resource_path + folder + "left" + ext);    // -x

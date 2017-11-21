@@ -63,6 +63,10 @@ class ApplicationSolar : public Application
     // render the skybox
     void renderSkybox() const;
 
+    // uses this shader and remembers the last one
+    // returns true if the shader state changed
+    bool useShader(std::string shaderName) const;
+
 
   protected:
 
@@ -115,9 +119,9 @@ class ApplicationSolar : public Application
     // store information about how the movement should be done
     glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
 
-    unsigned int starCount = 5000;
+    unsigned int starCount = 2000;
     float starSize = 1.f;
-    int starDistance_min = 40;
+    int starDistance_min = 45;
     int starDistance_max = 200;
 
     glm::mat4 view_matrix{};
