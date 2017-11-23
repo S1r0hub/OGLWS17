@@ -1029,7 +1029,7 @@ texture_info ApplicationSolar::loadCubemap(const std::vector<std::string>& paths
 
 void ApplicationSolar::initializeSkybox()
 {
-  model skybox_model = model_loader::obj(m_resource_path + "models/skybox.obj", model::TEXCOORD);
+  model skybox_model = model_loader::obj(m_resource_path + "models/skybox.obj");
 
   // generate vertex array object and bind it for attaching buffers
   glGenVertexArrays(1, &skybox_object.vertex_AO);
