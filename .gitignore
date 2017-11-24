@@ -6,3 +6,6 @@ install
 *.sublime-workspace
 *~
 .DS_Store 
+Thumbs.db
+*Thumbs.db
+*./Thumbs.db

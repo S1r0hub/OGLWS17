@@ -7,6 +7,9 @@ in vec3 vWorldPos;
 in vec3 vWorldNormal;
 in vec3 camPos;
 
+in mat3 TBN;
+
+
 // for texturing
 in vec2 texCoord;
 uniform bool useTexture;
@@ -15,6 +18,9 @@ uniform sampler2D tex;
 uniform sampler2D tex_night;          // nightmap - e.g. for earth
 uniform bool hasTex_night;            // if the night texture is available
 const float nightmapIntensity = 0.5;  // strength of the nightmap
+
+uniform sampler2D tex_normal;     // normal map texture
+uniform bool hasTex_normal;
 
 
 // blinn phong shading settings
@@ -30,12 +36,12 @@ out vec4 out_Color;
 
 
 // Returns diffuse and specular multipliers
-vec2 blinnPhong(vec3 lightDir, vec3 viewDir, float lightInt, float colIntAmb, float colIntDiff, float colIntSpec)
+vec2 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 normal, float lightInt, float colIntAmb, float colIntDiff, float colIntSpec)
 {
-  vec3 L = normalize(lightDir);     // normalized light direction
-  vec3 V = normalize(viewDir);      // position of the viewer
-  vec3 N = normalize(vWorldNormal); // normal vector normalized
-  vec3 H = normalize(V + L);        // halfway vector between viewer and light-source
+  vec3 L = normalize(lightDir); // normalized light direction
+  vec3 V = normalize(viewDir);  // position of the viewer
+  vec3 N = normalize(normal);   // normal vector normalized
+  vec3 H = normalize(V + L);    // halfway vector between viewer and light-source
 
   // the diffuse light factor
   //float diffuse = lightInt * colIntDiff * max(0.0, dot(N,L));
@@ -62,9 +68,32 @@ void main()
   // light and view direction
   vec3 lightDir = lightPos - vWorldPos;
   vec3 viewDir = camPos - vWorldPos;
+  vec3 normal = vWorldNormal;
+
+
+
+  // ===== normal mapping stuff ===== //
+
+  if (hasTex_normal)
+  {
+    // Restore normal from normal map texture
+    vec3 normalFromTex = normalize(texture(u_normalTexture, v_texcoord1).xyz * 2.0 - 1.0);
+
+    // Decrease details (mixing normal with uniform normal)
+    float factor = 1.0;
+    vec3 N = normalize(normalFromTex * factor + vec3(0.0, 0.0, 1.0) * (1.0 - factor));
+
+    lightDir = TBN * lightDir;
+    viewDir = TBN * viewDir;
+    normal = N;
+  }
+
+  // ================================ //
+
+
 
   // blinn phong shading
-  vec2 bps = blinnPhong(lightDir, viewDir, sunIntensity, ambIntensity, diffIntensity, specIntensity);
+  vec2 bps = blinnPhong(lightDir, viewDir, normal, sunIntensity, ambIntensity, diffIntensity, specIntensity);
 
 
   // combine the shading with the colors

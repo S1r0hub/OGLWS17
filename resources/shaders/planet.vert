@@ -4,14 +4,15 @@
 // vertex attributes of VAO
 layout(location = 0) in vec3 in_Position;
 layout(location = 1) in vec3 in_Normal;
-layout(location = 2) in vec2 in_texCoord;
+layout(location = 2) in vec2 in_TexCoord;
+layout(location = 3) in vec3 in_Tangent;
 
 
 //Matrix Uniforms as specified with glUniformMatrix4fv
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
-//uniform mat4 NormalMatrix;
+uniform mat4 NormalMatrix;
 uniform vec3 Color;
 
 
@@ -25,6 +26,9 @@ out vec3 camPos;
 // texture coordinates
 out vec2 texCoord;
 
+// Tangent, Bitangent, Normal Matrix
+out mat3 TBN;
+
 
 void main(void)
 {
@@ -32,7 +36,7 @@ void main(void)
   planetColor = Color;
 
   // for texturing
-  texCoord = in_texCoord;
+  texCoord = in_TexCoord;
 
 
   // calculate camera position (another way)
@@ -55,4 +59,17 @@ void main(void)
   vWorldNormal = (ModelMatrix * vec4(in_Normal, 0.0)).xyz;
 
   gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
+
+
+
+  // FOR NORMAL MAPPING
+
+  // Transform Normal and Tangent to world space
+  vec3 modelNormal = NormalMatrix * in_Normal;
+  vec3 modelTangent = NormalMatrix * in_Tangent;
+
+  // Bitangent Calculation
+  vec3 modelBitangent = cross(modelNormal, modelTangent);
+
+  TBN = transpose(mat3(modelTangent, modelBitangent, modelNormal));
 }
