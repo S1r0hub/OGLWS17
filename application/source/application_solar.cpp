@@ -933,6 +933,7 @@ void ApplicationSolar::initializePlanets()
   venus->setTexture(loadTexture(texPath + "venus.png"));
   earth->setTexture(loadTexture(texPath + "earth_2_daymap.png"));
   earth->setTexture(loadTexture(texPath + "earth_2_nightmap.png", 1), "night");
+  earth->setTexture(loadTexture(texPath + "earth_normalmap.png", 2), "normal");
   moon1->setTexture(loadTexture(texPath + "moon.png"));
   mars->setTexture(loadTexture(texPath + "mars.png"));
   jupiter->setTexture(loadTexture(texPath + "jupiter.png"));
