@@ -65,8 +65,8 @@ void main(void)
   // FOR NORMAL MAPPING
 
   // Transform Normal and Tangent to world space
-  vec3 modelNormal = NormalMatrix * in_Normal;
-  vec3 modelTangent = NormalMatrix * in_Tangent;
+  vec3 modelNormal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
+  vec3 modelTangent = (NormalMatrix * vec4(in_Tangent, 0.0)).xyz;
 
   // Bitangent Calculation
   vec3 modelBitangent = cross(modelNormal, modelTangent);
