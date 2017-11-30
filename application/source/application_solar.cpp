@@ -552,8 +552,8 @@ void ApplicationSolar::initializeShaderPrograms()
 {
   // ===================================================
   // shader programs for planets and suns
-  m_shaders.emplace("planet", shader_program{m_resource_path + "shaders/planet.vert",
-                                             m_resource_path + "shaders/planet.frag"});
+  m_shaders.emplace("planet", shader_program{m_resource_path + "shaders/planet_viewspace.vert",
+                                             m_resource_path + "shaders/planet_viewspace.frag"});
 
   m_shaders.emplace("sun", shader_program{m_resource_path + "shaders/sun.vert",
                                           m_resource_path + "shaders/sun.frag"});
