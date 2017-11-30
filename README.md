@@ -23,9 +23,9 @@ Everything marked with [] is an optional task.
 - [x] [Switching between Phong and cel-shading using the number keys "1" and "2"]
 ----
 #### Assignment 4  
-- [ ] Planet texturing
-- [ ] Skybox or Skysphere
-- [ ] [Normal mapping for the least one planet]
+- [x] Planet texturing
+- [x] Skybox or Skysphere
+- [x] [Normal mapping for the least one planet]
 ----
 #### Assignment 5  
 - [ ] Frame Buffer, Render Buffer, Depth Buffer
