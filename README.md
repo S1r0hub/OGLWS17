@@ -50,7 +50,10 @@ Everything marked with [] is an optional task.
 * MOUSE UP/DOWN = turn camera up/down
 * MOUSE LEFT/RIGHT = turn camera left/right
 * SHIFT = hold to double the speed while moving
-  
+* 1 = use blinn-phong shading
+* 2 = use cel-shading
+* T = disabled / enable textures
+
   
 ## Tested Platforms
 * **Linux**
