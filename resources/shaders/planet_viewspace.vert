@@ -46,12 +46,6 @@ void main(void)
   lightPos = (ViewMatrix * vec4(lightPosConst, 1.0)).xyz;
 
 
-  // get camera position from the view matrix
-  // (no longer needed in view space)
-  //mat4 ivm = inverse(ViewMatrix) * ModelMatrix;
-  //camPos = ivm[3].xyz;
-
-
   // get vertex world position and normal world position
   vec4 vPosMat = (ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
   vViewPos = vPosMat.xyz / vPosMat.w;
@@ -62,12 +56,12 @@ void main(void)
 
   // FOR NORMAL MAPPING
 
-  // Transform Normal and Tangent to world space
-  vec3 modelNormal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
+  // Transform Tangent to view space
   vec3 modelTangent = (NormalMatrix * vec4(in_Tangent, 0.0)).xyz;
 
   // Bitangent Calculation
-  vec3 modelBitangent = cross(modelNormal, modelTangent);
+  //vec3 modelBitangent = cross(vViewNormal, modelTangent);
+  vec3 modelBitangent = (NormalMatrix * vec4(cross(in_Normal, in_Tangent), 1.0)).xyz;
 
-  TBN = transpose(mat3(modelTangent, modelBitangent, modelNormal));
+  TBN = transpose(mat3(modelTangent, modelBitangent, vViewNormal));
 }

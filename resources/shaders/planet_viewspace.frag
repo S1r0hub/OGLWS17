@@ -6,7 +6,6 @@ in vec3 planetColor;
 in vec3 lightPos;
 in vec3 vViewPos;
 in vec3 vViewNormal;
-//in vec3 camPos;
 
 in mat3 TBN;
 
@@ -80,7 +79,7 @@ void main()
     vec3 normalFromTex = normalize(texture(tex_normal, texCoord).xyz * 2.0 - 1.0);
 
     // Decrease details (mixing normal with uniform normal)
-    float factor = 1.0;
+    float factor = 5.0;
     vec3 N = normalize(normalFromTex * factor + vec3(0.0, 0.0, 1.0) * (1.0 - factor));
 
     lightDir = TBN * normalize(lightDir);
