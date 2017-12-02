@@ -10,6 +10,12 @@
 #include <string>
 #include <vector>
 
+
+#define FLAG_TEX_NORMAL   0x00000001;
+#define FLAG_TEX_SPECULAR 0x00000010;
+#define FLAG_TEX_NIGHT    0x00000100;
+
+
 // Struct that holds texture information
 struct texture_info
 {
@@ -17,25 +23,31 @@ struct texture_info
     : index(-1)
     , unit(0)
     , path("")
+    , factor(1.0f)
   {}
 
-  texture_info(int index_, int unit_, std::string path_)
+  texture_info(int index_, int unit_, std::string path_, float factor_ = 1.0f)
     : index(index_)
     , unit(unit_)
     , path(path_)
+    , factor(factor_)
   {}
 
-  texture_info(int index_, int unit_, std::vector<std::string> paths_)
+  texture_info(int index_, int unit_, std::vector<std::string> paths_, float factor_ = 1.0f)
     : index(index_)
     , unit(unit_)
     , path("")
     , paths(paths_)
+    , factor(factor_)
   {}
+
+  void setFactor(float factor_) { factor = factor_; }
 
   int index;
   int unit;
   std::string path;
   std::vector<std::string> paths; // needed for cubemaps
+  float factor; // for normal mapping and everything that needs a factor
 };
 
 #endif

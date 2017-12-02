@@ -155,6 +155,9 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 
       bool hasTex = planet->hasTexture() && useTextures;
 
+      // texture flags telling which textures to use
+      unsigned int texflags = 0;
+
       if (hasTex)
       {
         // get the uniform location for the texture from the shader
@@ -178,18 +181,12 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
           glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
           glUniform1i(sampler_loc, texinf.unit);
 
-          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "hasTex_night");
-          glUniform1i(sampler_loc, true);
-        }
-        else
-        {
-          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "hasTex_night");
-          glUniform1i(sampler_loc, false);
+          texflags |= FLAG_TEX_NIGHT; // tell shader that we got a night texture to use
         }
 
 
         // check if the planet has a normal map texture, if so then use it - otherwise don't
-        if (planet->hasTexture("normal"))
+        if (planet->hasTexture("normal") && useNormalMapping)
         {
           texture_info texinf = planet->getTextureInfo("normal");
 
@@ -199,20 +196,21 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
           glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
           glUniform1i(sampler_loc, texinf.unit);
 
-          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "hasTex_normal");
-          glUniform1i(sampler_loc, true);
-        }
-        else
-        {
-          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "hasTex_normal");
-          glUniform1i(sampler_loc, false);
+          // upload normal factor
+          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "factor_normal");
+          glUniform1f(sampler_loc, texinf.factor);
+
+          texflags |= FLAG_TEX_NORMAL; // tell shader that we got a normal texture to use
         }
       }
 
       // upload information whether or not to use the texture
       glUniform1i(m_shaders.at("planet").u_locs.at("useTexture"), hasTex);
 
-      // ========================================= //
+      // using this method, we only upload one uniform for the whole active texture information
+      glUniform1i(m_shaders.at("planet").u_locs.at("texture_flags"), texflags);
+
+      // =============== END OF TEXTURING =============== //
 
 
 
@@ -229,6 +227,7 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 
       // draw bound vertex array using bound shader
       //glEnable(GL_DEPTH_TEST); // already enabled by launcher.cpp render function
+      glEnable(GL_CULL_FACE);
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
     }
     else if (shadingMode == 1) // cel shading
@@ -263,6 +262,8 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
 
 void ApplicationSolar::renderOrbits(std::shared_ptr<Planet> planet) const
 {
+  if (!showOrbits) { return; }
+
   std::deque<std::shared_ptr<Planet>> moons = planet->getMoons();
   std::shared_ptr<Planet> moon;
   for (unsigned int i = 0; i < moons.size(); i++)
@@ -447,11 +448,26 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
         break;
 
       case GLFW_KEY_T:
-        if (active)
-        {
+        if (active) {
           // to enable/disable textures
           useTextures = !useTextures;
           std::cout << "Textures " << (useTextures ? "enabled" : "disabled") << std::endl;
+        }
+        break;
+
+      case GLFW_KEY_N:
+        if (active) {
+          // to enable/disable normal mapping
+          useNormalMapping = !useNormalMapping;
+          std::cout << "Normal mapping " << (useNormalMapping ? "enabled" : "disabled") << std::endl;
+        }
+        break;
+
+      case GLFW_KEY_O:
+        if (active) {
+          // to enable/disable orbits
+          showOrbits = !showOrbits;
+          std::cout << "Orbits " << (showOrbits ? "enabled" : "disabled") << std::endl;
         }
         break;
 
@@ -566,6 +582,7 @@ void ApplicationSolar::initializeShaderPrograms()
   m_shaders.at("planet").u_locs["Color"] = -1;
   m_shaders.at("planet").u_locs["useTexture"] = -1;
   m_shaders.at("planet").u_locs["tex"] = -1;
+  m_shaders.at("planet").u_locs["texture_flags"] = -1;
 
   // request uniform locations for sun shader program
   //m_shaders.at("sun").u_locs["NormalMatrix"] = -1; // not needed currently
@@ -649,12 +666,12 @@ void ApplicationSolar::initializeGeometry()
 {  
   model planet_model = model_loader::obj(m_resource_path + "models/sphere_own_uv.obj", model::NORMAL | model::TEXCOORD | model::TANGENT);
 
-  // old version without textures
-  //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL);
-  //model planet_model = model_loader::obj(m_resource_path + "models/sphere_own.obj", model::NORMAL);
+  // more models (not all contain uv mapping)
+  //model planet_model = model_loader::obj(m_resource_path + "models/sphere.obj", model::NORMAL | model::TEXCOORD | model::TANGENT);
+  //model planet_model = model_loader::obj(m_resource_path + "models/sphere_own_fromcube_uv.obj", model::NORMAL | model::TEXCOORD | model::TANGENT);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_cube.obj", model::NORMAL);
   //model planet_model = model_loader::obj(m_resource_path + "models/test_monkey.obj", model::NORMAL);
-  //model planet_model = model_loader::obj(m_resource_path + "models/fidget_01_small.obj", model::NORMAL);
+  //model planet_model = model_loader::obj(m_resource_path + "models/fidget_01.obj", model::NORMAL);
 
 
   // generate vertex array object
@@ -931,10 +948,15 @@ void ApplicationSolar::initializePlanets()
   std::string texPath = m_resource_path + "textures/planet/";
   mercury->setTexture(loadTexture(texPath + "mercury.png"));
   venus->setTexture(loadTexture(texPath + "venus.png"));
-  earth->setTexture(loadTexture(texPath + "earth_2_daymap.png"));
-  earth->setTexture(loadTexture(texPath + "earth_2_nightmap.png", 1), "night");
-  earth->setTexture(loadTexture(texPath + "earth_normalmap.png", 2), "normal");
+
+  // texture from https://www.solarsystemscope.com/textures
+  earth->setTexture(loadTexture(texPath + "earth_daymap.png"));
+  earth->setTexture(loadTexture(texPath + "earth_nightmap.png", 1), "night");
+  earth->setTexture(loadTexture(texPath + "earth_normalmap.png", 2), "normal", 6.0f);
+
   moon1->setTexture(loadTexture(texPath + "moon.png"));
+  moon1->setTexture(loadTexture(texPath + "moon_normalmap.png", 2), "normal");
+
   mars->setTexture(loadTexture(texPath + "mars.png"));
   jupiter->setTexture(loadTexture(texPath + "jupiter.png"));
   saturn->setTexture(loadTexture(texPath + "saturn.png"));

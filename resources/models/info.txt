@@ -1,0 +1,14 @@
+Models with UV-Mapping:
+- sphere_new.obj
+- sphere_new_fromcube.obj
+
+These sphere models are not provided by the framework.
+They are smoother and use another kind of UV-Mapping,
+fixing the weird rotated texture bug that
+occurs using the provided sphere model.
+
+
+test_monkey.obj
+is the default Blender Suzanne Model.
+It does NOT contain UV-mapping!
+The model was added to test lighting properties like reflection.

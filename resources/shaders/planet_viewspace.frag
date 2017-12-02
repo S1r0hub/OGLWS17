@@ -15,12 +15,23 @@ in vec2 texCoord;
 uniform bool useTexture;
 uniform sampler2D tex;
 
-uniform sampler2D tex_night;          // nightmap - e.g. for earth
-uniform bool hasTex_night;            // if the night texture is available
-const float nightmapIntensity = 0.5;  // strength of the nightmap
+// nightmap
+uniform sampler2D tex_night;
+const float nightmapIntensity = 0.5;
 
-uniform sampler2D tex_normal;     // normal map texture
-uniform bool hasTex_normal;
+// normal mapping
+uniform sampler2D tex_normal;
+uniform float factor_normal;
+
+// specular mapping
+//uniform sampler2D tex_specular; // TODO
+
+// texture flags tell which textures are available to use
+// for more information about the numbers see "texture_info.hpp"
+uniform int texture_flags;
+const int flag_tex_normal = 1;
+const int flag_tex_specular = 2;
+const int flag_tex_night = 4;
 
 
 // blinn phong shading settings
@@ -62,6 +73,16 @@ vec2 blinnPhong(vec3 lightDir, vec3 viewDir, vec3 normal, float lightInt, float 
 }
 
 
+
+// Determine if the flag is active or not.
+// Returns if the texture is available.
+bool hasTex(int flag_tex)
+{
+  return bool(texture_flags & flag_tex);
+}
+
+
+
 void main()
 {
   // light and view direction
@@ -71,20 +92,28 @@ void main()
 
 
 
-  // ===== normal mapping stuff ===== //
+  // ===== normal mapping ===== //
 
-  if (hasTex_normal)
+  if (hasTex(flag_tex_normal))
   {
     // Restore normal from normal map texture
     vec3 normalFromTex = normalize(texture(tex_normal, texCoord).xyz * 2.0 - 1.0);
 
-    // Decrease details (mixing normal with uniform normal)
-    float factor = 5.0;
-    vec3 N = normalize(normalFromTex * factor + vec3(0.0, 0.0, 1.0) * (1.0 - factor));
+    // use the factor of normal map
+    vec3 N = normalize(normalFromTex * factor_normal + vec3(0.0, 0.0, 1.0) * (1.0 - factor_normal));
 
     lightDir = TBN * normalize(lightDir);
     viewDir = TBN * normalize(viewDir);
     normal = N;
+
+    // debugging
+    /*
+    if (bool(texture_flags & texFlag_normal))
+    {
+      out_Color = vec4(normal, 1.0);
+      return;
+    }
+    */
   }
 
   // ================================ //
@@ -109,7 +138,7 @@ void main()
     vec3 white = vec3(1.0, 1.0, 1.0);
     finalColor = texture(tex, texCoord) * vec4((bps.x * white), 1.0);
 
-    if (hasTex_night)
+    if (hasTex(flag_tex_night))
     {
       float rim = clamp(smoothstep(0.8, 1.1, (1.0 - bps.x)), 0.0, 1.0);
       finalColor += texture(tex_night, texCoord) * vec4((rim * white * nightmapIntensity), 1.0);

@@ -88,10 +88,13 @@ class Planet
 
     // set the texture object for this planet
     // this will also set useTexture to true if the ID <= 0
+    // factor = strength of the mapping (e.g. for normal mapping)
     // type = diffuse (default), normal, specular, ...
-    void setTexture(texture_info info, std::string type = "diffuse");
+    void setTexture(texture_info info, std::string type = "diffuse", float factor = 1.0f);
 
-    // returns the ID of the texture or -1 if not set!
+    // Returns texture info.
+    // ID will be -1 if the texture does not exist,
+    // so ensure to check this case before using it.
     // type = diffuse (default), normal, specular, ...
     texture_info getTextureInfo(std::string type = "diffuse");
     

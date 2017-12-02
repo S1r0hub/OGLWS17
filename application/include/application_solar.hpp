@@ -142,6 +142,8 @@ class ApplicationSolar : public Application
 
     // whether or not to use textures (can be changed by user pressing the key <T>)
     bool useTextures = true;
+    bool useNormalMapping = true; // to enable/disable normal mapping
+    bool showOrbits = true; // to enable/disable orbits
 
     // Loads a texture and returns the texture unit ID.
     // (ID = Index in loaded textures vector!)

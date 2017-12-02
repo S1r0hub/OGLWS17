@@ -121,9 +121,14 @@ void Planet::setColor(int r, int g, int b)
 
 void Planet::isSun(bool isASun) { sun = isASun; }
 
+
 // TEXTURE SETTER
-void Planet::setTexture(texture_info info, std::string type)
-{ textures[type] = info; }
+
+void Planet::setTexture(texture_info info, std::string type, float factor)
+{
+  info.setFactor(factor);
+  textures[type] = info;
+}
 
 
 

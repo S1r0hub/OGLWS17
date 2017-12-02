@@ -52,7 +52,8 @@ Everything marked with [] is an optional task.
 * SHIFT = hold to double the speed while moving
 * 1 = use blinn-phong shading
 * 2 = use cel-shading
-* T = disabled / enable textures
+* T = toggle textures
+* N = toggle normal mapping
 
   
 ## Tested Platforms
