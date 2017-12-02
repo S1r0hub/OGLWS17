@@ -156,51 +156,59 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       bool hasTex = planet->hasTexture() && useTextures;
 
       // texture flags telling which textures to use
-      unsigned int texflags = 0;
+      unsigned char texflags = 0;
 
       if (hasTex)
       {
         // get the uniform location for the texture from the shader
         GLuint sampler_loc = m_shaders.at("planet").u_locs.at("tex");
-      
-        // use TEXTURE0 and thus, upload 0 at glUniform1i as well
-        texture_info texinf = planet->getTextureInfo();
-        glActiveTexture(GL_TEXTURE0 + texinf.unit);
-        glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
-        glUniform1i(sampler_loc, texinf.unit);
+        texture_info texinf = planet->getTextureInfo(); // use diffuse texture
+        uploadTexture(sampler_loc, texinf);
 
 
         // check if the planet has a night texture to use for the dark areas of the planet
         if (planet->hasTexture("night"))
         {
-          texture_info texinf = planet->getTextureInfo("night");
+          texinf = planet->getTextureInfo("night");
 
           // upload texture ID to sampler location
           sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "tex_night");
-          glActiveTexture(GL_TEXTURE0 + texinf.unit);
-          glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
-          glUniform1i(sampler_loc, texinf.unit);
+          uploadTexture(sampler_loc, texinf);
 
-          texflags |= FLAG_TEX_NIGHT; // tell shader that we got a night texture to use
+          // tell shader that we got a night texture to use
+          texflags |= FLAG_TEX_NIGHT;
         }
 
 
         // check if the planet has a normal map texture, if so then use it - otherwise don't
         if (planet->hasTexture("normal") && useNormalMapping)
         {
-          texture_info texinf = planet->getTextureInfo("normal");
+          texinf = planet->getTextureInfo("normal");
 
           // upload texture ID to sampler location
           sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "tex_normal");
-          glActiveTexture(GL_TEXTURE0 + texinf.unit);
-          glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
-          glUniform1i(sampler_loc, texinf.unit);
+          uploadTexture(sampler_loc, texinf);
 
           // upload normal factor
           sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "factor_normal");
           glUniform1f(sampler_loc, texinf.factor);
 
-          texflags |= FLAG_TEX_NORMAL; // tell shader that we got a normal texture to use
+          // tell shader that we got a normal texture to use
+          texflags |= FLAG_TEX_NORMAL;
+        }
+
+
+        // check if the planet has a specular map texture, if so then use it - otherwise don't
+        if (planet->hasTexture("specular"))
+        {
+          texinf = planet->getTextureInfo("specular");
+
+          // upload texture ID to sampler location
+          sampler_loc = glGetUniformLocation(m_shaders.at("planet").handle, "tex_specular");
+          uploadTexture(sampler_loc, texinf);
+
+          // tell shader that we got a specular texture to use
+          texflags |= FLAG_TEX_SPECULAR;
         }
       }
 
@@ -409,6 +417,16 @@ void ApplicationSolar::uploadUniforms()
   updateUniformLocations();
   updateView();
   updateProjection();
+}
+
+
+// uploads texture uniforms
+void ApplicationSolar::uploadTexture(GLuint sampler_location, texture_info texinf) const
+{
+  if (texinf.index < 0) { return; } // invalid texture info
+  glActiveTexture(GL_TEXTURE0 + texinf.unit);
+  glBindTexture(GL_TEXTURE_2D, loaded_textures.at(texinf.index));
+  glUniform1i(sampler_location, texinf.unit);
 }
 
 
@@ -953,6 +971,7 @@ void ApplicationSolar::initializePlanets()
   earth->setTexture(loadTexture(texPath + "earth_daymap.png"));
   earth->setTexture(loadTexture(texPath + "earth_nightmap.png", 1), "night");
   earth->setTexture(loadTexture(texPath + "earth_normalmap.png", 2), "normal", 6.0f);
+  earth->setTexture(loadTexture(texPath + "earth_specularmap.png", 3), "specular");
 
   moon1->setTexture(loadTexture(texPath + "moon.png"));
   moon1->setTexture(loadTexture(texPath + "moon_normalmap.png", 2), "normal");
@@ -1156,6 +1175,8 @@ void ApplicationSolar::initializeSkybox()
 
 ApplicationSolar::~ApplicationSolar()
 {
+  std::cout << "Closing Application...\nCleaning up resources..." << std::endl;
+
   // clean up loaded textures
   glDeleteTextures(loaded_textures.size(), loaded_textures.data());
 
@@ -1172,6 +1193,8 @@ ApplicationSolar::~ApplicationSolar()
   glDeleteBuffers(1, &skybox_object.vertex_BO);
   glDeleteBuffers(1, &skybox_object.element_BO);
   glDeleteVertexArrays(1, &skybox_object.vertex_AO);
+
+  std::cout << "Finished cleanup.\nExit." << std::endl;
 }
 
 

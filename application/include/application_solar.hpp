@@ -39,6 +39,9 @@ class ApplicationSolar : public Application
     // update uniform locations and values
     void uploadUniforms();
 
+    // uploads texture uniforms
+    void uploadTexture(GLuint sampler_location, texture_info texinf) const;
+
     // update projection matrix
     void updateProjection();
 

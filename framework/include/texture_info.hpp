@@ -11,9 +11,9 @@
 #include <vector>
 
 
-#define FLAG_TEX_NORMAL   0x00000001;
-#define FLAG_TEX_SPECULAR 0x00000010;
-#define FLAG_TEX_NIGHT    0x00000100;
+#define FLAG_TEX_NORMAL   0x1;
+#define FLAG_TEX_SPECULAR 0x2;
+#define FLAG_TEX_NIGHT    0x4;
 
 
 // Struct that holds texture information
