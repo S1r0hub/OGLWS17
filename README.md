@@ -54,6 +54,7 @@ Everything marked with [] is an optional task.
 * 2 = use cel-shading
 * T = toggle textures
 * N = toggle normal mapping
+* O = toggle planet orbits
 
   
 ## Tested Platforms
