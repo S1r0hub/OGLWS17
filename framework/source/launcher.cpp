@@ -43,6 +43,14 @@ Launcher::Launcher(int argc, char* argv[])
  ,m_application{}
 {}
 
+
+const unsigned Launcher::getWindowHeight()
+{ return m_window_height; }
+
+const unsigned Launcher::getWindowWidth()
+{ return m_window_width; }
+
+
 std::string resourcePath(int argc, char* argv[]) {
   std::string resource_path{};
   //first argument is resource path

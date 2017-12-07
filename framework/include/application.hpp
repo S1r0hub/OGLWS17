@@ -11,7 +11,8 @@
 class Application {
  public:
   // allocate and initialize objects
-  Application(std::string const& resource_path);
+  Application(std::string const& resource_path, const unsigned windowWidth, const unsigned windowHeight);
+
   // free
   virtual ~Application();
 
@@ -34,6 +35,7 @@ class Application {
   void updateUniformLocations();
 
   std::string m_resource_path; 
+  const unsigned winWidth, winHeight;
 
   glm::fmat4 m_view_transform;
   glm::fmat4 m_view_projection;

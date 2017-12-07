@@ -118,7 +118,7 @@ void main()
 
     // debugging
     /*
-    if (bool(texture_flags & texFlag_normal))
+    if (hasTex(flag_tex_normal))
     {
       out_Color = vec4(normal, 1.0);
       return;

@@ -33,14 +33,43 @@ using namespace gl;
 
 
 
-ApplicationSolar::ApplicationSolar(std::string const& resource_path)
- :Application{resource_path}
+ApplicationSolar::ApplicationSolar(std::string const& resource_path, const unsigned windowWidth, const unsigned windowHeight)
+ :Application{resource_path, windowWidth, windowHeight}
 {
+  std::cout << "Window Dimension: " << windowWidth << "x" << windowHeight << std::endl;
+
   initializeGeometry();
+  std::cout << "Geometry initialized." << std::endl;
+
   initializeShaderPrograms();
+  std::cout << "Shader programs initialized." << std::endl;
+
   initializeStars();
+  std::cout << "Stars initialized." << std::endl;
+
   initializePlanets();
+  std::cout << "Planets initialized." << std::endl;
+
   initializeSkybox();
+  std::cout << "Skybox initialized." << std::endl;
+
+  if (useFrameBuffer)
+  {
+    if (initializeFrameBuffer())
+    {
+      std::cout << "FrameBuffer initialized." << std::endl;
+    }
+    else
+    {
+      std::cout << "FrameBuffer initialization failed!" << std::endl;
+      glBindFramebuffer(GL_FRAMEBUFFER, 0); // use default framebuffer
+      useFrameBuffer = false;
+    }
+  }
+  else
+  {
+    std::cout << "FrameBuffer disabled." << std::endl;
+  }
 }
 
 
@@ -342,6 +371,13 @@ void ApplicationSolar::renderSkybox() const
 
 void ApplicationSolar::render() const
 {
+  // bind the framebuffer to use it
+  if (useFrameBuffer)
+  {
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0); // 0 is default framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+  }
+
   renderSkybox();    // render the skybox
   renderStars();     // render all stars
   renderObject(sun); // render the sun and all their planets with their moons
@@ -666,6 +702,14 @@ void ApplicationSolar::initializeShaderPrograms()
   m_shaders.at("skybox").u_locs["ViewMatrix"] = -1;
   m_shaders.at("skybox").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("skybox").u_locs["Skybox"] = -1;
+
+
+  // shader for framebuffer rendering
+  m_shaders.emplace("screen", shader_program{m_resource_path + "shaders/screen.vert",
+                                             m_resource_path + "shaders/screen.frag" });
+
+  m_shaders.at("screen").u_locs["frameBufferTex"] = -1;
+
 
 
   // register programs to which the view matrix should be uploaded after changes
@@ -1172,6 +1216,87 @@ void ApplicationSolar::initializeSkybox()
 }
 
 
+// intializes the framebuffer
+bool ApplicationSolar::initializeFrameBuffer()
+{
+  // create the quad for rendering the framebuffer
+  // create the quad vertex array object
+  GLuint screenQuad_AO;
+  glGenVertexArrays(1, &screenQuad_AO);
+  glBindVertexArray(screenQuad_AO);
+
+  // quad vertex buffer data
+  static const GLfloat quad_vbd[] =
+  {
+    -1.0f, -1.0f, 0.0f,
+     1.0f, -1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+     1.0f, -1.0f, 0.0f,
+     1.0f,  1.0f, 0.0f,
+  };
+
+  // create the quad vertex buffer object
+  GLuint screenQuad_BO;
+  glGenBuffers(1, &screenQuad_BO);
+  glBindBuffer(GL_ARRAY_BUFFER, screenQuad_BO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vbd), quad_vbd, GL_STATIC_DRAW);
+
+  screenQuad.vertex_AO = screenQuad_AO;
+  screenQuad.vertex_BO = screenQuad_BO;
+
+
+  // create the framebuffer
+  glGenFramebuffers(1, &frameBuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+  // generate texture and attach it
+  glGenTextures(1, &frameBufferTexture);
+  glBindTexture(GL_TEXTURE_2D, frameBufferTexture);
+
+  // create texture without data (empty)
+  glTexImage2D
+  (
+    GL_TEXTURE_2D,    // target
+    0,                // level (level-of-detail number) (mipmap reduction)
+    GL_RGB,           // internalFormat (number of color components)
+    winWidth,         // width
+    winHeight,        // height
+    0,                // border (must be 0)
+    GL_RGB,           // format of the pixel data
+    GL_UNSIGNED_BYTE, // type (data type of pixel data) (GL_UNSIGNED_BYTE...)
+    NULL              // data (pointer to the image data in memory)
+  );
+  
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+  // generate and bind render buffer object
+  GLuint depthRenderBuffer;
+  glGenRenderbuffers(1, &depthRenderBuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, winWidth, winHeight);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBuffer);
+
+
+  // set the texture as colour attachement 0
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBufferTexture, 0);
+
+  // Set the list of draw buffers.
+  GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+  int draw_buffers_size = sizeof(draw_buffers) / sizeof(draw_buffers[0]);
+  glDrawBuffers(draw_buffers_size, draw_buffers);
+
+  // check that the framebuffer is "ok"
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  { return false; }
+  
+  return true;
+}
+
+
+
 
 ApplicationSolar::~ApplicationSolar()
 {
@@ -1179,6 +1304,7 @@ ApplicationSolar::~ApplicationSolar()
 
   // clean up loaded textures
   glDeleteTextures(loaded_textures.size(), loaded_textures.data());
+  glDeleteTextures(1, &frameBufferTexture);
 
   // planets
   glDeleteBuffers(1, &planet_object.vertex_BO);
@@ -1193,6 +1319,9 @@ ApplicationSolar::~ApplicationSolar()
   glDeleteBuffers(1, &skybox_object.vertex_BO);
   glDeleteBuffers(1, &skybox_object.element_BO);
   glDeleteVertexArrays(1, &skybox_object.vertex_AO);
+
+  // clearn framebuffers
+  glDeleteFramebuffers(1, &frameBuffer);
 
   std::cout << "Finished cleanup.\nExit." << std::endl;
 }

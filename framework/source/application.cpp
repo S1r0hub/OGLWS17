@@ -10,11 +10,13 @@ using namespace gl;
 
 #include <iostream>
 
-Application::Application(std::string const& resource_path)
+Application::Application(std::string const& resource_path, const unsigned windowWidth, const unsigned windowHeight)
  :m_resource_path{resource_path}
  ,m_view_transform{glm::translate(glm::fmat4{}, glm::fvec3{0.0f, 0.0f, 4.0f})}
  ,m_view_projection{1.0}
  ,m_shaders{}
+ ,winWidth(windowWidth)
+ ,winHeight(windowHeight)
 {}
 
 Application::~Application() {

@@ -60,7 +60,6 @@ void main(void)
   vec3 modelTangent = (NormalMatrix * vec4(in_Tangent, 0.0)).xyz;
 
   // Bitangent Calculation
-  //vec3 modelBitangent = cross(vViewNormal, modelTangent);
   vec3 modelBitangent = (NormalMatrix * vec4(cross(in_Normal, in_Tangent), 1.0)).xyz;
 
   TBN = transpose(mat3(modelTangent, modelBitangent, vViewNormal));

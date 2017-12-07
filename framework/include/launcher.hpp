@@ -17,6 +17,9 @@ class Launcher {
     launcher.run<T>();
   }
 
+  const unsigned getWindowHeight();
+  const unsigned getWindowWidth();
+
  private:
 
   Launcher(int argc, char* argv[]);
@@ -25,7 +28,7 @@ class Launcher {
   void run(){
     initialize();
 
-    m_application = new T{m_resource_path};
+    m_application = new T{m_resource_path, m_window_width, m_window_height};
 
     mainLoop();
   }

@@ -32,7 +32,8 @@ class ApplicationSolar : public Application
   public:
 
     // allocate and initialize objects
-    ApplicationSolar(std::string const& resource_path);
+    ApplicationSolar(std::string const& resource_path, const unsigned windowWidth, const unsigned windowHeight);
+
     // free allocated objects
     ~ApplicationSolar();
 
@@ -78,6 +79,7 @@ class ApplicationSolar : public Application
     void initializePlanets();
     void initializeStars();
     void initializeSkybox();
+    bool initializeFrameBuffer();
     void updateView();
     void move();
 
@@ -85,6 +87,7 @@ class ApplicationSolar : public Application
     model_object planet_object;
     model_object stars{};
     model_object skybox_object;
+    model_object screenQuad; // the quad to draw the framebuffer
 
 
   private:
@@ -164,6 +167,11 @@ class ApplicationSolar : public Application
     texture_info loadCubemap(const std::vector<std::string>& paths, int textureUnit = 0);
     texture_info skyboxTexture;
     glm::fmat4 skyboxModelMatrix{};
+
+    // Framebuffer variables
+    bool useFrameBuffer = false; // TODO: UV for the quad ...!
+    GLuint frameBuffer;
+    GLuint frameBufferTexture;
 };
 
 #endif
