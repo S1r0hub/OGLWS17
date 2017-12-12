@@ -169,7 +169,7 @@ class ApplicationSolar : public Application
     glm::fmat4 skyboxModelMatrix{};
 
     // Framebuffer variables
-    bool useFrameBuffer = true; // TODO: UV for the quad ...!
+    bool useFrameBuffer = false; // TODO: UV for the quad ...!
     GLuint frameBuffer;
     GLuint frameBufferTexture;
 };
