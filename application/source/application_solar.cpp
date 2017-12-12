@@ -1226,14 +1226,15 @@ bool ApplicationSolar::initializeFrameBuffer()
   glBindVertexArray(screenQuad_AO);
 
   // quad vertex buffer data
+  // we could also use indexing but its not needed here
   static const GLfloat quad_vbd[] =
   {
-    -1.0f, -1.0f, 0.0f,
-     1.0f, -1.0f, 0.0f,
-    -1.0f,  1.0f, 0.0f,
-    -1.0f,  1.0f, 0.0f,
-     1.0f, -1.0f, 0.0f,
-     1.0f,  1.0f, 0.0f,
+    -1.0f, -1.0f, 0.0f, /* v1 */ 0.0f, 0.0f, /* v1_uv */
+     1.0f, -1.0f, 0.0f, /* v2 */ 1.0f, 0.0f, /* v2_uv */
+    -1.0f,  1.0f, 0.0f, /* v4 */ 0.0f, 1.0f, /* v4_uv */
+    -1.0f,  1.0f, 0.0f, /* v4 */ 0.0f, 1.0f, /* v4_uv */
+     1.0f, -1.0f, 0.0f, /* v2 */ 1.0f, 0.0f, /* v2_uv */
+     1.0f,  1.0f, 0.0f, /* v3 */ 1.0f, 1.0f, /* v3_uv */
   };
 
   // create the quad vertex buffer object
@@ -1242,8 +1243,20 @@ bool ApplicationSolar::initializeFrameBuffer()
   glBindBuffer(GL_ARRAY_BUFFER, screenQuad_BO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vbd), quad_vbd, GL_STATIC_DRAW);
 
+  // activate first attribute on gpu (position of the vertex)
+  glEnableVertexAttribArray(0);
+  // one vertex consists of 3 floats for position and 2 for UV (= stride of 5)
+  glVertexAttribPointer(0, 3, model::POSITION.type, GL_FALSE, 5 * sizeof(float), 0);
+
+  // activate first attribute on gpu (position of the vertex)
+  glEnableVertexAttribArray(0);
+  // one vertex consists of 3 floats for position and 2 for UV (= stride of 5)
+  glVertexAttribPointer(0, 2, model::POSITION.type, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
   screenQuad.vertex_AO = screenQuad_AO;
   screenQuad.vertex_BO = screenQuad_BO;
+  // because we create the quad out of 2 triangles (each with 3 vertices)
+  screenQuad.num_elements = 2;
 
 
   // create the framebuffer
