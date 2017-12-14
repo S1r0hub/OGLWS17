@@ -488,6 +488,10 @@ void ApplicationSolar::uploadUniforms()
   updateUniformLocations();
   updateView();
   updateProjection();
+
+  // upload kernel for screen shader
+  useShader("screen");
+  glUniformMatrix3fv(m_shaders.at("screen").u_locs.at("Kernel3x3"), 1, GL_FALSE, glm::value_ptr(blurKernel));
 }
 
 
@@ -766,6 +770,7 @@ void ApplicationSolar::initializeShaderPrograms()
 
   m_shaders.at("screen").u_locs["frameBufferTex"] = -1;
   m_shaders.at("screen").u_locs["effectFlags"] = -1;
+  m_shaders.at("screen").u_locs["Kernel3x3"] = -1;
 
 
   // register programs to which the view matrix should be uploaded after changes

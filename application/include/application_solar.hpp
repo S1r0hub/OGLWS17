@@ -180,6 +180,9 @@ class ApplicationSolar : public Application
     GLuint frameBufferTexture;
     GLuint depthRenderBuffer;
     unsigned char screenEffects = 0; // tells the shader which effects to apply
+    glm::fmat3 blurKernel = glm::fmat3{1.f/16.f, 2.f/16.f, 1.f/16.f,
+                                       2.f/16.f, 4.f/16.f, 2.f/16.f,
+                                       1.f/16.f, 2.f/16.f, 1.f/16.f};
 };
 
 

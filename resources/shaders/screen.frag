@@ -4,6 +4,7 @@ in vec2 TexCoords;
 
 uniform sampler2D frameBufferTex;
 uniform int effectFlags;
+uniform mat3 Kernel3x3;
 
 const int flag_effect_grayscale = 1;
 const int flag_effect_mirrored_horizontal = 2;
@@ -36,6 +37,26 @@ vec4 applyEffects(vec4 color)
   color = texture(frameBufferTex, tc);
 
 
+  // APPLY "PIXEL EFFECTS" HERE:
+  if (effectActive(flag_effect_blurred))
+  {
+    // blurred effect using 3x3 gaussian kernel
+    // some nice info: https://en.wikipedia.org/wiki/Kernel_(image_processing)
+
+    color = vec4(0.0);
+
+    // get the pixel size (use original texcoords here!)
+    vec2 pixSize = vec2(TexCoords.x / gl_FragCoord.x, TexCoords.y / gl_FragCoord.y);
+
+    for (int x = -1; x <= 1; x++) {
+      for (int y = -1; y <= 1; y++) {
+        float kernelWeight = Kernel3x3[x+1][y+1];
+        color += texture(frameBufferTex, tc + vec2(x * pixSize.x, y * pixSize.y)) * kernelWeight;
+      }
+    }
+  }
+
+
   // APPLY COLOR EFFECTS HERE:
 
   // apply grayscale effect
@@ -43,13 +64,6 @@ vec4 applyEffects(vec4 color)
   {
     float lum = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
     color = lum * vec4(1.0, 1.0, 1.0, 1.0);
-  }
-
-
-  // APPLY "PIXEL EFFECTS" HERE:
-  if (effectActive(flag_effect_blurred))
-  {
-    // TODO: implement blurred effect using 3x3 gaussian kernel
   }
 
   return color;
