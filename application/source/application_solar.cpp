@@ -1351,9 +1351,11 @@ bool ApplicationSolar::initializeFrameBuffer()
   // set the texture as colour attachement 0
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBufferTexture, 0);
 
-  // Set the list of draw buffers.
+  // set the list of draw buffers
   GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
   int draw_buffers_size = sizeof(draw_buffers) / sizeof(draw_buffers[0]);
+
+  // render outputs from fragment shaders to these buffers
   glDrawBuffers(draw_buffers_size, draw_buffers);
 
   // check that the framebuffer is "ok"

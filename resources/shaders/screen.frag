@@ -22,10 +22,34 @@ bool effectActive(int effectFlag)
 // apply active effects
 vec4 applyEffects(vec4 color)
 {
+  vec2 tc = TexCoords;
+
+  // horizontal mirrored texture coordinates
+  if (effectActive(flag_effect_mirrored_horizontal))
+  { tc.x = 1.0 - tc.x; }
+
+  // vertical mirrored texture coordinates
+  if (effectActive(flag_effect_mirrored_vertical))
+  { tc.y = 1.0 - tc.y; }
+
+  // apply mirroring
+  color = texture(frameBufferTex, tc);
+
+
+  // APPLY COLOR EFFECTS HERE:
+
+  // apply grayscale effect
   if (effectActive(flag_effect_grayscale))
   {
     float lum = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
     color = lum * vec4(1.0, 1.0, 1.0, 1.0);
+  }
+
+
+  // APPLY "PIXEL EFFECTS" HERE:
+  if (effectActive(flag_effect_blurred))
+  {
+    // TODO: implement blurred effect using 3x3 gaussian kernel
   }
 
   return color;
