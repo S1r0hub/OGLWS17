@@ -366,22 +366,30 @@ void ApplicationSolar::renderSkybox() const
   glDisable(GL_DEPTH_TEST);
   glDrawElements(skybox_object.draw_mode, skybox_object.num_elements, model::INDEX.type, NULL);
   glEnable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
 }
 
 
 void ApplicationSolar::render() const
 {
-  // bind the framebuffer to use it
+  // bind the framebuffer to use it (draw to it)
   if (useFrameBuffer)
   {
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0); // 0 is default framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
+    // clear the framebuffer first (use color black)
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
+  // scene rendering
   renderSkybox();    // render the skybox
   renderStars();     // render all stars
   renderObject(sun); // render the sun and all their planets with their moons
   renderOrbits(sun); // render the orbits of all the planets and the moons
+
+  // draw the framebuffer using the default framebuffer to the screen
+  if (useFrameBuffer) { frameBufferDrawing(); }
 
   // We sadly have to use a mutable here because the
   // framework does not provide a main loop and
@@ -391,6 +399,33 @@ void ApplicationSolar::render() const
   deltaTime = float(currentTimestamp - lastTimestamp);
   lastTimestamp = currentTimestamp;
 }
+
+
+void ApplicationSolar::frameBufferDrawing() const
+{
+  // bind default framebuffer for on-screen drawing
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // bind screen quad to draw
+  glBindVertexArray(screenQuad.vertex_AO);
+
+  // we dont need depth test because we only want to see the quad
+  glDisable(GL_DEPTH_TEST);
+
+  // use the on-screen shader program
+  useShader("screen");
+
+  // upload effect uniforms
+  glUniform1i(m_shaders.at("screen").u_locs.at("effectFlags"), screenEffects);
+
+  // use texture unit 0 to draw and bind the texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, frameBufferTexture);
+
+  // draw the screen quad (6 indices)
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
 
 
 // update view matrix of all shader programs
@@ -489,46 +524,58 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
       case GLFW_KEY_C: moveDown = active; break;
       case GLFW_KEY_LEFT_SHIFT: moveFast = active; break;
 
-      case GLFW_KEY_1:
+      case GLFW_KEY_1: // to use blinn phong shading mode
         if (shadingMode == 0 || !active) { break; }
         std::cout << "Using Blinn Phong Shading now." << std::endl;
         shadingMode = 0;
         break;
 
-      case GLFW_KEY_2:
+      case GLFW_KEY_2: // to use cel shading mode
         if (shadingMode == 1 || !active) { break; }
         std::cout << "Using Cel Shading now." << std::endl;
         shadingMode = 1;
         break;
 
-      case GLFW_KEY_T:
+      case GLFW_KEY_T: // to enable/disable textures
         if (active) {
-          // to enable/disable textures
           useTextures = !useTextures;
           std::cout << "Textures " << (useTextures ? "enabled" : "disabled") << std::endl;
         }
         break;
 
-      case GLFW_KEY_N:
+      case GLFW_KEY_N: // to enable/disable normal mapping
         if (active) {
-          // to enable/disable normal mapping
           useNormalMapping = !useNormalMapping;
           std::cout << "Normal mapping " << (useNormalMapping ? "enabled" : "disabled") << std::endl;
         }
         break;
 
-      case GLFW_KEY_O:
+      case GLFW_KEY_O: // to enable/disable orbits
         if (active) {
-          // to enable/disable orbits
           showOrbits = !showOrbits;
           std::cout << "Orbits " << (showOrbits ? "enabled" : "disabled") << std::endl;
         }
         break;
 
-      case GLFW_KEY_P:
+      case GLFW_KEY_7: // toggle grayscale effect
+        if (active) { toggleEffect(screenEffects, FLAG_EFFECT_GRAYSCALE, "grayscale"); }
+        break;
+
+      case GLFW_KEY_8: // toggle horizontal mirrored effect
+        if (active) { toggleEffect(screenEffects, FLAG_EFFECT_MIRRORED_HORIZONTAL, "horizontal mirrored"); }
+        break;
+
+      case GLFW_KEY_9: // toggle vertical mirrored effect
+        if (active) { toggleEffect(screenEffects, FLAG_EFFECT_MIRRORED_VERTICAL, "vertical mirrored"); }
+        break;
+
+      case GLFW_KEY_0: // toggle blurred image effect
+        if (active) { toggleEffect(screenEffects, FLAG_EFFECT_BLURRED, "blurred"); }
+        break;
+
+      case GLFW_KEY_P: // [P]rint debug - to check camera position and view matrix
         if (active)
         {
-          // debug - to check camera position and view matrix
           std::cout << "--------------------" << std::endl;
           std::cout << "View Mat:" << std::endl;
           std::cout << glm::to_string(view_matrix) << std::endl;
@@ -545,6 +592,15 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
   }
 
   move();
+}
+
+
+// to enable/disable specific effects
+void ApplicationSolar::toggleEffect(unsigned char& effectFlags, const int effectFlag, std::string name)
+{
+  screenEffects = screenEffects ^ effectFlag;
+  bool state = screenEffects & effectFlag;
+  std::cout << "Effect (" << name << ") " << (state ? "enabled" : "disabled") << std::endl;
 }
 
 
@@ -709,7 +765,7 @@ void ApplicationSolar::initializeShaderPrograms()
                                              m_resource_path + "shaders/screen.frag" });
 
   m_shaders.at("screen").u_locs["frameBufferTex"] = -1;
-
+  m_shaders.at("screen").u_locs["effectFlags"] = -1;
 
 
   // register programs to which the view matrix should be uploaded after changes
@@ -1249,9 +1305,9 @@ bool ApplicationSolar::initializeFrameBuffer()
   glVertexAttribPointer(0, 3, model::POSITION.type, GL_FALSE, 5 * sizeof(float), 0);
 
   // activate first attribute on gpu (position of the vertex)
-  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
   // one vertex consists of 3 floats for position and 2 for UV (= stride of 5)
-  glVertexAttribPointer(0, 2, model::POSITION.type, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+  glVertexAttribPointer(1, 2, model::POSITION.type, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
   screenQuad.vertex_AO = screenQuad_AO;
   screenQuad.vertex_BO = screenQuad_BO;
@@ -1286,7 +1342,6 @@ bool ApplicationSolar::initializeFrameBuffer()
 
 
   // generate and bind render buffer object
-  GLuint depthRenderBuffer;
   glGenRenderbuffers(1, &depthRenderBuffer);
   glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, winWidth, winHeight);
@@ -1333,8 +1388,9 @@ ApplicationSolar::~ApplicationSolar()
   glDeleteBuffers(1, &skybox_object.element_BO);
   glDeleteVertexArrays(1, &skybox_object.vertex_AO);
 
-  // clearn framebuffers
+  // clear framebuffers and renderbuffers
   glDeleteFramebuffers(1, &frameBuffer);
+  glDeleteRenderbuffers(1, &depthRenderBuffer);
 
   std::cout << "Finished cleanup.\nExit." << std::endl;
 }

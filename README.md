@@ -28,7 +28,15 @@ Everything marked with [] is an optional task.
 - [x] [Normal mapping for the least one planet]
 ----
 #### Assignment 5  
-- [ ] Frame Buffer, Render Buffer, Depth Buffer
+- [x] Render with Frame Buffer
+- [x] Effect: luminance preserving greyscale image (Key: 7)
+- [ ] Effect: horizontally mirrored image
+- [ ] Effect: vertically mirrored image
+- [ ] Effect: blurred image with 3x3 gaussian kernel
+- [ ] [Allow all possible combinations of the effects]
+----
+#### Assignment 6 (optional)  
+- [ ] Shader Buffers
 
 ...
 

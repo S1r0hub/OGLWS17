@@ -71,6 +71,12 @@ class ApplicationSolar : public Application
     // returns true if the shader state changed
     bool useShader(std::string shaderName) const;
 
+    // use the framebuffer to draw
+    void frameBufferDrawing() const;
+
+    // to enable/disable specific effects
+    void toggleEffect(unsigned char& effectFlags, int effectFlag, std::string name);
+
 
   protected:
 
@@ -125,7 +131,7 @@ class ApplicationSolar : public Application
     // store information about how the movement should be done
     glm::fvec3 movementVector{0.f, 2.f, 30.f}; // initial camera position
 
-    unsigned int starCount = 2000;
+    unsigned int starCount = 2500;
     float starSize = 1.f;
     int starDistance_min = 45;
     int starDistance_max = 200;
@@ -169,9 +175,19 @@ class ApplicationSolar : public Application
     glm::fmat4 skyboxModelMatrix{};
 
     // Framebuffer variables
-    bool useFrameBuffer = false; // TODO: UV for the quad ...!
+    bool useFrameBuffer = true; // enable/disable use of framebuffer (before starting the program!)
     GLuint frameBuffer;
     GLuint frameBufferTexture;
+    GLuint depthRenderBuffer;
+    unsigned char screenEffects = 0; // tells the shader which effects to apply
 };
+
+
+// effect flags (have to be the same as in the shader)
+#define FLAG_EFFECT_GRAYSCALE           0x1
+#define FLAG_EFFECT_MIRRORED_HORIZONTAL 0x2
+#define FLAG_EFFECT_MIRRORED_VERTICAL   0x4
+#define FLAG_EFFECT_BLURRED             0x8
+
 
 #endif
