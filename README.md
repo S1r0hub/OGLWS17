@@ -29,11 +29,11 @@ Everything marked with [] is an optional task.
 ----
 #### Assignment 5  
 - [x] Render with Frame Buffer
-- [x] Effect: luminance preserving greyscale image (Key: 7)
-- [ ] Effect: horizontally mirrored image
-- [ ] Effect: vertically mirrored image
-- [ ] Effect: blurred image with 3x3 gaussian kernel
-- [ ] [Allow all possible combinations of the effects]
+- [x] Effect: luminance preserving grayscale image (Key: 7)
+- [x] Effect: horizontally mirrored image (Key: 8)
+- [x] Effect: vertically mirrored image (Key: 9)
+- [x] Effect: blurred image with 3x3 gaussian kernel (Key: 0)
+- [x] [Allow all possible combinations of the effects]
 ----
 #### Assignment 6 (optional)  
 - [ ] Shader Buffers
@@ -48,7 +48,8 @@ Everything marked with [] is an optional task.
   
   
 ## Controls
-
+  
+#### Camera Movement
 * W = move forward
 * S = move backward
 * A = move left
@@ -58,25 +59,34 @@ Everything marked with [] is an optional task.
 * MOUSE UP/DOWN = turn camera up/down
 * MOUSE LEFT/RIGHT = turn camera left/right
 * SHIFT = hold to double the speed while moving
-* 1 = use blinn-phong shading
-* 2 = use cel-shading
+  
+#### Rendering
 * T = toggle textures
 * N = toggle normal mapping
 * O = toggle planet orbits
-
+* 1 = use blinn-phong shading
+* 2 = use cel-shading
+  
+#### Effects
+* 7 = toggle effect: luminance preserving grayscale
+* 8 = toggle effect: horizontally mirrored image
+* 9 = toggle effect: vertically mirrored image
+* 0 = toggle effect: blurred image with 3x3 gaussian kernel
+  
   
 ## Tested Platforms
 * **Linux**
 * **Windows**
   
   
-## Libraries
+## Used Libraries
 * [**GLFW**](http://www.glfw.org/) for window and context creation
 * [**glbinding**](https://github.com/cginternals/glbinding) for OpenGL function binding
 * [**GLM**](glm.g-truc.net/) for mathematics
 * [**tinyobjloader**](http://syoyo.github.io/tinyobjloader/) for model loading
 * [**stb_image**](https://github.com/nothings/stb) for image loading
   
+----
   
 ## License
 this framework is licensed under the GPL v3
@@ -85,3 +95,8 @@ this framework is licensed under the GPL v3
 * **glm** is licensed under the Happy Bunny License (Modified MIT)
 * **tinyobjloader** is licensed under 2 clause BSD
 * **stb_image** is public domain
+  
+  
+## Maintainers
+- Leon H.
+- Marcel H.
