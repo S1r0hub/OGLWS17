@@ -1,6 +1,7 @@
 # Solar Sys
 Computergraphics WiSe 17/18
   
+![SolarSys Build 4 Preview](preview_build-4.jpg)
   
 ## Current features
 Everything marked with [] is an optional task.
