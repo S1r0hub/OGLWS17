@@ -38,11 +38,17 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path, const unsig
 {
   std::cout << "Window Dimension: " << windowWidth << "x" << windowHeight << std::endl;
 
+  // Order of initialization is important in some cases!
+
   initializeGeometry();
   std::cout << "Geometry initialized." << std::endl;
 
   initializeShaderPrograms();
   std::cout << "Shader programs initialized." << std::endl;
+
+  if (initializeUniformBuffers())
+  { std::cout << "Uniform buffers initialized." << std::endl; }
+  else { throw std::logic_error("Failed to initialize uniform buffers!"); }
 
   initializeStars();
   std::cout << "Stars initialized." << std::endl;
@@ -133,6 +139,10 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
     // upload model matrix to shader
     glUniformMatrix4fv(m_shaders.at("sun").u_locs.at("ModelMatrix"), 1, GL_FALSE, glm::value_ptr(model_matrix));
 
+    // extra matrix for normal transformation to keep them orthogonal to surface - currently not needed
+    glm::fmat4 normal_matrix = glm::inverseTranspose(view_matrix * model_matrix);
+    glUniformMatrix4fv(m_shaders.at("sun").u_locs.at("NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normal_matrix));
+
 
     // =============== TEXTURING =============== //
 
@@ -164,9 +174,8 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
     glEnable(GL_CULL_FACE);  // enable culling so we don't render back faces
     glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
   }
-  else
+  else // render planets and moons
   {
-    // render planets and moons
     if (shadingMode == 0) // blinn phong shading
     {
       if (useShader("planet"))
@@ -448,7 +457,7 @@ void ApplicationSolar::updateView()
   m_view_transform = glm::rotate(m_view_transform, -cameraRotationX, glm::fvec3{1.0f, 0.0f, 0.0f});
 
 
-  // upload view matrix to gpu
+  // upload view matrix to GPU
   for (const std::string& prog : updateViewFor)
   {
     glUseProgram(m_shaders.at(prog).handle);
@@ -456,6 +465,11 @@ void ApplicationSolar::updateView()
   }
 
   lastProg = ""; // so that next time a program needs to be used anyway
+
+
+  // (assignment 6) change data of CameraBuffer struct and update the related GPU buffer
+  camBuffer.ViewMatrix = view_matrix;
+  updateUniformBuffer(UBO_camera, &camBuffer, sizeof(camBuffer));
 }
 
 
@@ -464,14 +478,16 @@ void ApplicationSolar::updateProjection()
 {
   // upload projection matrix to gpu
   std::vector<std::string> progs;
-  progs.push_back("planet");
-  progs.push_back("sun");
+  //progs.push_back("planet"); // done by UBO (since assignment 6)
+  //progs.push_back("sun");
   progs.push_back("stars");
   progs.push_back("orbits");
   progs.push_back("celSilhouette");
   progs.push_back("celColor");
   progs.push_back("skybox");
 
+
+  // upload the matrix to the shaders
   for (const std::string& prog : progs)
   {
     glUseProgram(m_shaders.at(prog).handle);
@@ -479,6 +495,11 @@ void ApplicationSolar::updateProjection()
   }
 
   lastProg = ""; // so that next time a program needs to be used anyway
+
+
+  // (assignment 6) change data of CameraBuffer struct and update the related GPU buffer
+  camBuffer.ProjectionMatrix = m_view_projection;
+  updateUniformBuffer(UBO_camera, &camBuffer, sizeof(camBuffer));
 }
 
 
@@ -486,6 +507,11 @@ void ApplicationSolar::updateProjection()
 void ApplicationSolar::uploadUniforms()
 {
   updateUniformLocations();
+  
+  // query the uniform block index from all shaders that use a uniform buffer object (assignment 6)
+  queryUniformBlockIndex(UBO_camera_bi, "planet", "camera_data");
+  queryUniformBlockIndex(UBO_camera_bi, "sun", "camera_data");
+
   updateView();
   updateProjection();
 
@@ -689,20 +715,20 @@ void ApplicationSolar::initializeShaderPrograms()
                                           m_resource_path + "shaders/sun.frag"});
 
   // request uniform locations for planet shader program
-  m_shaders.at("planet").u_locs["NormalMatrix"] = -1; // not needed currently
+  m_shaders.at("planet").u_locs["NormalMatrix"] = -1;
   m_shaders.at("planet").u_locs["ModelMatrix"] = -1;
-  m_shaders.at("planet").u_locs["ViewMatrix"] = -1;
-  m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
+  //m_shaders.at("planet").u_locs["ViewMatrix"] = -1; // done by UBO (since assignment 6)
+  //m_shaders.at("planet").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("planet").u_locs["Color"] = -1;
   m_shaders.at("planet").u_locs["useTexture"] = -1;
   m_shaders.at("planet").u_locs["tex"] = -1;
   m_shaders.at("planet").u_locs["texture_flags"] = -1;
 
   // request uniform locations for sun shader program
-  //m_shaders.at("sun").u_locs["NormalMatrix"] = -1; // not needed currently
+  m_shaders.at("sun").u_locs["NormalMatrix"] = -1;
   m_shaders.at("sun").u_locs["ModelMatrix"] = -1;
-  m_shaders.at("sun").u_locs["ViewMatrix"] = -1;
-  m_shaders.at("sun").u_locs["ProjectionMatrix"] = -1;
+  //m_shaders.at("sun").u_locs["ViewMatrix"] = -1; // done by UBO (since assignment 6)
+  //m_shaders.at("sun").u_locs["ProjectionMatrix"] = -1;
   m_shaders.at("sun").u_locs["Color"] = -1;
   m_shaders.at("sun").u_locs["useTexture"] = -1;
   m_shaders.at("sun").u_locs["tex"] = -1;
@@ -774,8 +800,8 @@ void ApplicationSolar::initializeShaderPrograms()
 
 
   // register programs to which the view matrix should be uploaded after changes
-  updateViewFor.push_back("planet");
-  updateViewFor.push_back("sun");
+  //updateViewFor.push_back("planet"); // done by UBO (since assignment 6)
+  //updateViewFor.push_back("sun");
   updateViewFor.push_back("stars");
   updateViewFor.push_back("orbits");
   updateViewFor.push_back("celSilhouette");
@@ -1113,7 +1139,7 @@ void ApplicationSolar::initializePlanets()
 // Returns texture_info with "index = -1" if loading failed!
 texture_info ApplicationSolar::loadTexture(const std::string& path, int textureUnit)
 {
-  // Part of the stbi documentation, but we can use the given texture_loade instead.
+  // Part of the stbi documentation, but we can use the given texture_loader instead.
   // int x,y,n;
   // unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
   // // ... process data if not NULL ...
@@ -1371,6 +1397,50 @@ bool ApplicationSolar::initializeFrameBuffer()
 }
 
 
+// initialize uniform buffer objects
+// Returns false if this operation is not possible, true otherwise.
+bool ApplicationSolar::initializeUniformBuffers()
+{
+  GLint gpu_maxBindingPoints;
+  glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &gpu_maxBindingPoints);
+
+  // check that the gpu supports the needed amount of binding points
+  if (gpu_maxBindingPoints < gpu_minBindingPoints)
+  {
+    std::cerr << "GPU does not have enough binding points (" << gpu_minBindingPoints << ")!" << std::endl;
+    return false;
+  }
+
+  // Create Camera UNIFORM BUFFER OBJECT
+  glGenBuffers(1, &UBO_camera);
+  glBindBufferBase(GL_UNIFORM_BUFFER, UBO_camera_bi, UBO_camera);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(camBuffer), &camBuffer, GL_DYNAMIC_DRAW);
+
+  return true;
+}
+
+
+// Query the shaders uniform block index location and upload the global binding point value to it
+void ApplicationSolar::queryUniformBlockIndex(GLuint blockIndex, std::string shaderName, char* uniformName)
+{
+  // query block index location
+  // blockIndexLocation = shader location of the "uniform block index"
+  GLuint blockIndexLocation = glGetUniformBlockIndex(m_shaders.at(shaderName).handle, uniformName);
+
+  // upload global binding point value to the shaders block index location
+  glUniformBlockBinding(m_shaders.at("planet").handle, blockIndexLocation, blockIndex);
+}
+
+
+// Update the data of the camera uniform buffer
+void ApplicationSolar::updateUniformBuffer(GLuint bufferHandle, void* sourceData, size_t sourceDataSize)
+{
+  glBindBuffer(GL_UNIFORM_BUFFER, bufferHandle);
+  void* buffer_ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+  // copy the data from src=camBuffer to dst=buffer_ptr
+  std::memcpy(buffer_ptr, sourceData, sourceDataSize);
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+}
 
 
 ApplicationSolar::~ApplicationSolar()
@@ -1398,6 +1468,9 @@ ApplicationSolar::~ApplicationSolar()
   // clear framebuffers and renderbuffers
   glDeleteFramebuffers(1, &frameBuffer);
   glDeleteRenderbuffers(1, &depthRenderBuffer);
+
+  // clean up UBOs
+  glDeleteBuffers(1, &UBO_camera);
 
   std::cout << "Finished cleanup.\nExit." << std::endl;
 }

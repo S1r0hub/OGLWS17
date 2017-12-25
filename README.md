@@ -37,7 +37,9 @@ Everything marked with [] is an optional task.
 - [x] [Allow all possible combinations of the effects]
 ----
 #### Assignment 6 (optional)  
-- [ ] Shader Buffers
+- [x] Uniform Buffer Object to pass View- and Projection-Matrices to shaders
+- [ ] [light struct in Phong shader and Storage Block for dynamic array of lights]
+- [ ] [use the lights from the beforementioned array]
 
 ...
 

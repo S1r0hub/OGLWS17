@@ -89,6 +89,11 @@ class ApplicationSolar : public Application
     void updateView();
     void move();
 
+    // uniform buffers (assignment 6)
+    bool initializeUniformBuffers();
+    void updateUniformBuffer(GLuint bufferHandle, void* sourceData, size_t sourceDataSize);
+    void queryUniformBlockIndex(GLuint blockIndex, std::string shaderName, char* uniformName);
+
     // cpu representation of model
     model_object planet_object;
     model_object stars{};
@@ -109,9 +114,9 @@ class ApplicationSolar : public Application
 
     // holding movement information
     bool moveForward = false,
-	       moveBackward = false,
-	       moveLeft = false,
-	       moveRight = false,
+         moveBackward = false,
+         moveLeft = false,
+         moveRight = false,
          moveUp = false,
          moveDown = false,
          moveFast = false;
@@ -183,6 +188,12 @@ class ApplicationSolar : public Application
     glm::fmat3 blurKernel = glm::fmat3{1.f/16.f, 2.f/16.f, 1.f/16.f,
                                        2.f/16.f, 4.f/16.f, 2.f/16.f,
                                        1.f/16.f, 2.f/16.f, 1.f/16.f};
+
+    // struct for uniform buffer object
+    CameraBuffer camBuffer{};
+    GLuint gpu_minBindingPoints = 1; // amount of binding points needed
+    GLuint UBO_camera;        // uniform buffer object handle for camera data
+    GLuint UBO_camera_bi = 0; // global binding index of the UBO
 };
 
 

@@ -10,8 +10,13 @@ layout(location = 3) in vec3 in_Tangent;
 
 //Matrix Uniforms as specified with glUniformMatrix4fv
 uniform mat4 ModelMatrix;
-uniform mat4 ViewMatrix;
-uniform mat4 ProjectionMatrix;
+
+layout (std140) uniform camera_data
+{
+  mat4 ViewMatrix;
+  mat4 ProjectionMatrix;
+};
+
 uniform mat4 NormalMatrix;
 uniform vec3 Color;
 

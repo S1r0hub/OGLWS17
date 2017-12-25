@@ -55,11 +55,20 @@ struct shader_program
 };
 
 
-// star information
+// star information (unused)
 struct Star
 {
   glm::fvec3 position{};
   glm::fvec3 color{1.f, 1.f, 1.f};
+};
+
+
+// added for assignment 6
+// struct that holds view and projection matrix for uniform buffer object
+struct CameraBuffer
+{
+  glm::fmat4 ViewMatrix{};
+  glm::fmat4 ProjectionMatrix{};
 };
 
 

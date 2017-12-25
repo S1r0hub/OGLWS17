@@ -8,9 +8,14 @@ layout(location = 2) in vec2 in_TexCoord;
 
 //Matrix Uniforms as specified with glUniformMatrix4fv
 uniform mat4 ModelMatrix;
-uniform mat4 ViewMatrix;
-uniform mat4 ProjectionMatrix;
-//uniform mat4 NormalMatrix;
+
+layout (std140) uniform camera_data
+{
+  mat4 ViewMatrix;
+  mat4 ProjectionMatrix;
+};
+
+uniform mat4 NormalMatrix;
 uniform vec3 Color;
 
 out vec3 eye;
@@ -23,6 +28,8 @@ out vec2 texCoord;
 
 void main(void)
 {
+  // Following runs in world space
+  /*
   vec4 vPosMat = ModelMatrix * vec4(in_Position, 1.0);
   vec3 vWorldPos = vPosMat.xyz / vPosMat.w;
   vec3 vWorldNormal = (ModelMatrix * vec4(in_Normal, 0.0)).xyz;
@@ -36,6 +43,22 @@ void main(void)
 
   eye = normalize(camPos - vWorldPos);
   pass_Normal = vWorldNormal;
+  color = Color;
+
+	gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
+  */
+
+
+  // Following runs in view space
+  vec4 vPosMat = (ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
+  vec3 vViewPos = vPosMat.xyz / vPosMat.w;
+  vec3 vViewNormal = (NormalMatrix * vec4(in_Normal, 0.0)).xyz;
+
+  // for texturing
+  texCoord = in_TexCoord;
+
+  eye = normalize(-vViewPos);
+  pass_Normal = vViewNormal;
   color = Color;
 
 	gl_Position = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vec4(in_Position, 1.0);
