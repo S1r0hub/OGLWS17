@@ -15,7 +15,7 @@
 // added for assignment 1
 #include <deque> // holding pointers to the planet objects
 #include <memory> // included to use shared pointers (std::shared_ptr)
-#include "Planet.hpp"
+#include "planet.hpp"
 
 // added for assignment 2
 #include <cstdlib> // for random
