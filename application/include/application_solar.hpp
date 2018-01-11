@@ -25,6 +25,9 @@
 // added for assignment 4
 #include "texture_info.hpp"
 
+// added for additional tasks
+#include "text_loader.hpp"
+
 
 // gpu representation of model
 class ApplicationSolar : public Application
@@ -86,6 +89,7 @@ class ApplicationSolar : public Application
     void initializeStars();
     void initializeSkybox();
     bool initializeFrameBuffer();
+    bool initializeFonts();
     void updateView();
     void move();
 
@@ -194,6 +198,9 @@ class ApplicationSolar : public Application
     GLuint gpu_minBindingPoints = 1; // amount of binding points needed
     GLuint UBO_camera;        // uniform buffer object handle for camera data
     GLuint UBO_camera_bi = 0; // global binding index of the UBO
+
+    bool renderText = true;
+    std::shared_ptr<TextLoader> textLoader;
 };
 
 

@@ -49,11 +49,15 @@ include_directories(external/glfw-3.1.1/include)
 # add glbindings
 add_subdirectory(external/glbinding-2.1.1)
 
+# add freetype
+add_subdirectory(external/freetype-2.9)
+include_directories(external/freetype-2.9/include)
+
 # create framework helper library 
 file(GLOB FRAMEWORK_SOURCES framework/source/*.cpp)
 add_library(framework STATIC ${FRAMEWORK_SOURCES} ${TINYOBJLOADER_SOURCES})
 target_include_directories(framework PUBLIC framework/include)
-target_link_libraries(framework glbinding glfw ${GLFW_LIBRARIES})
+target_link_libraries(framework glbinding glfw ${GLFW_LIBRARIES} freetype ${FREETYPE_LIBRARIES})
 
 # include headers in all following applications
 include_directories(application/include)

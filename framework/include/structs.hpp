@@ -71,5 +71,4 @@ struct CameraBuffer
   glm::fmat4 ProjectionMatrix{};
 };
 
-
 #endif

@@ -32,7 +32,6 @@ using namespace gl;
 #include "texture_loader.hpp"
 
 
-
 ApplicationSolar::ApplicationSolar(std::string const& resource_path, const unsigned windowWidth, const unsigned windowHeight)
  :Application{resource_path, windowWidth, windowHeight}
 {
@@ -75,6 +74,19 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path, const unsig
   else
   {
     std::cout << "FrameBuffer disabled." << std::endl;
+  }
+
+  if (!renderText)
+  { std::cout << "Rendering text is disabled." << std::endl; }
+  else
+  {
+    if (initializeFonts())
+    { std::cout << "TextLoader initialized." << std::endl; }
+    else
+    {
+      std::cout << "Failed to initialize TextLoader!" << std::endl;
+      renderText = false; // not possible to render text if this case occurs
+    }
   }
 }
 
@@ -1440,6 +1452,15 @@ void ApplicationSolar::updateUniformBuffer(GLuint bufferHandle, void* sourceData
   // copy the data from src=camBuffer to dst=buffer_ptr
   std::memcpy(buffer_ptr, sourceData, sourceDataSize);
   glUnmapBuffer(GL_UNIFORM_BUFFER);
+}
+
+
+bool ApplicationSolar::initializeFonts()
+{
+  textLoader = std::make_shared<TextLoader>();
+  textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 48);
+  if (!textLoader->load()) { return false; }
+  return true;
 }
 
 
