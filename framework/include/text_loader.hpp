@@ -4,43 +4,21 @@
 // Marcel H. (116610)
 
 
-#ifndef SOLARSYS_TEXTLOADER
-#define SOLARSYS_TEXTLOADER
+#ifndef SOLARSYS_TEXT_LOADER
+#define SOLARSYS_TEXT_LOADER
 
 
 #include <iostream>
-#include <string>
 #include <vector>
-#include <map>
 
-// include freetype font libraries
-#include "ft2build.h"
-#include FT_FREETYPE_H
-
-
-// Font struct for text loader
-struct Font
-{
-  Font(std::string name_, std::string path_, int height_ = 0, int width_ = 0)
-    : name(name_)
-    , path(path_)
-    , height(height_)
-    , width(width_)
-  {}
-
-  std::string name = "";
-  std::string path = "";
-  int width = 0;
-  int height = 0;
-  bool loaded = false;
-  FT_Face face;
-};
+// structs and several included libraries
+#include "text_structs.hpp"
 
 
 /*
   Usage:
-  1. Add Fonts
-  2. Load everything
+  1. Add Fonts using the "addFont" method
+  2. Load everything using the "load" method
 */
 class TextLoader
 {
@@ -53,7 +31,7 @@ class TextLoader
     // Leave width or height at 0 to calculate it dynamically
     void addFont(std::string name, std::string fontPath, int height = 0, int width = 0);
 
-    // Load all fonts
+    // Load all fonts and the glyphs
     bool load();
 
 
@@ -62,7 +40,15 @@ class TextLoader
     // initialize the used library
     bool initializeFreeTypeLibrary();
 
-    void setActiveFaceCharacter(FT_Face face, char character);
+    // pre-load all characters for every font
+    bool loadFontCharacters(Font& font);
+
+    // load and set the active glyph (data is then accessible using the face)
+    // returns true if successful, false otherwise
+    bool setActiveFaceCharacter(FT_Face face, char character);
+
+    // cleans the used resources of FreeType
+    void cleanupResources();
 
     FT_Library ftlib;
     std::vector<Font> fonts;
