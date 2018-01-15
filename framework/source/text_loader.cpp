@@ -16,7 +16,7 @@ TextLoader::~TextLoader()
 void TextLoader::cleanupResources()
 {
   for (auto const& font : fonts)
-  { if (font.face != nullptr) { FT_Done_Face(font.face); } }
+  { if (font.second.face != nullptr) { FT_Done_Face(font.second.face); } }
 
   if (ftlib == nullptr)
   { std::cout << "WARN: FreeType Library was a nullptr!" << std::endl; }
@@ -32,10 +32,25 @@ bool TextLoader::initializeFreeTypeLibrary()
 }
 
 
+
+bool TextLoader::hasFont(std::string name)
+{
+  for (std::pair<std::string, Font> p : fonts)
+  { if (p.first == name) { return true; } }
+  return false;
+}
+
+
+Font& TextLoader::getFont(std::string name)
+{
+  return fonts.at(name);
+}
+
+
 void TextLoader::addFont(std::string name, std::string fontPath, int height, int width)
 {
-  Font newFont = Font{name, fontPath, height, width};
-  fonts.push_back(newFont);
+  Font newFont{name, fontPath, height, width};
+  fonts[name] = newFont;
 }
 
 
@@ -52,23 +67,25 @@ bool TextLoader::load()
   {
     // load the font as a so called "face"
     FT_Face face;
-    if (FT_New_Face(ftlib, font.path.c_str(), 0, &face))
+    if (FT_New_Face(ftlib, font.second.path.c_str(), 0, &face))
     {
       std::cerr << "ERROR: Failed to load font \"" 
-        << font.name << "\" from: " 
-        << font.path << std::endl;
+        << font.second.name << "\" from: " 
+        << font.second.path << std::endl;
       continue;
     }
-    font.face = face;
+
+    // set the face of the font
+    font.second.face = face;
 
     // font settings
-    FT_Set_Pixel_Sizes(face, font.width, font.height); // set font width and height (0 = dynamically calculate)
+    FT_Set_Pixel_Sizes(face, font.second.width, font.second.height); // set font width and height (0 = dynamically calculate)
  
     // pre-load the font characters
-    loadFontCharacters(font);
+    loadFontCharacters(font.second);
 
-    std::cout << "Font \"" << font.name << "\" initialized." << std::endl;
-    font.loaded = true;
+    std::cout << "Font \"" << font.second.name << "\" initialized." << std::endl;
+    font.second.loaded = true;
   }
 
   // clean up resources used by FreeType

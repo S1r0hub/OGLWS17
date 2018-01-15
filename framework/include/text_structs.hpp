@@ -51,6 +51,9 @@ struct TextCharacter
 // Simple font struct for the text loader
 struct Font
 {
+  Font()
+  {}
+
   Font(std::string name_, std::string path_, int height_ = 0, int width_ = 0)
     : name(name_)
     , path(path_)
@@ -66,7 +69,7 @@ struct Font
   FT_Face face;
 
   // all loaded characters/gylphs are stored by this map
-  std::map<GLchar, TextCharacter> characters;
+  std::map<GLchar, TextCharacter> characters{};
 };
 
 

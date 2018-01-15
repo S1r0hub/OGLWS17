@@ -23,15 +23,15 @@ class Text2D
   public:
 
     // the text and integer vector for the color (range 0-255)
-    Text2D(std::string text, const Font& font, glm::ivec3 color = glm::ivec3{255}, float winWidth = 800.f, float winHeight = 600.f);
+    Text2D(std::string text, Font& font, glm::ivec3 color = glm::ivec3{255}, unsigned int winWidth = 800, unsigned int winHeight = 600);
 
     // render to screen
-    void render(GLuint shaderProgram) const;
+    void render(GLuint shaderProgram, float x, float y, float scale) const;
 
 
   private:
 
-    const Font& font_;
+    Font& font_;
     std::string text_;
     glm::ivec3 color_;
 

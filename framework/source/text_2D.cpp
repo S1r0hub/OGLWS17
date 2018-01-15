@@ -6,7 +6,7 @@
 #include "text_2D.hpp"
 
 
-Text2D::Text2D(std::string text, const Font& font, glm::ivec3 color, float winWidth, float winHeight)
+Text2D::Text2D(std::string text, Font& font, glm::ivec3 color, unsigned int winWidth, unsigned int winHeight)
   : text_(text)
   , font_(font)
   , color_(color)
@@ -14,7 +14,8 @@ Text2D::Text2D(std::string text, const Font& font, glm::ivec3 color, float winWi
   , winHeight_(winHeight)
 {
   // create orthogonal projection matrix (for 2D view)
-  projectionMatrix = glm::ortho(0.0f, winWidth, 0.0f, winHeight);
+  projectionMatrix = glm::ortho(0.0f, (float) winWidth, 0.0f, (float) winHeight);
+  prepare(); // prepare VBO, VAO...
 }
 
 
@@ -45,7 +46,7 @@ void Text2D::prepare()
 }
 
 
-void Text2D::render(GLuint shaderProgram) const
+void Text2D::render(GLuint shaderProgram, float x, float y, float scale) const
 {
   // enable blending for transparency
   glEnable(GL_BLEND);
@@ -62,20 +63,49 @@ void Text2D::render(GLuint shaderProgram) const
   glBindVertexArray(VAO);
 
   // for all characters of the string...
-  std::string::const_iterator c;
-  for (c = text_.begin(); c != text_.end(); c++);
+  for (std::string::const_iterator c = text_.begin(); c != text_.end(); ++c)
   {
-    bool err = false;
     TextCharacter tc;
     try { tc = font_.characters.at(*c); }
-    catch (const std::out_of_range)
+    catch (...)
     {
       std::cerr << "Failed to render a character (" << *c << ")!" << std::endl;
-      err = true;
+      continue;
     }
 
-    //if (err) { continue; }
-     
-    // TODO: continue here!!
+    GLfloat xpos = x + tc.bearing.x * scale;
+    GLfloat ypos = y - (tc.dimension.y - tc.bearing.y) * scale;
+
+    GLfloat w = tc.dimension.x * scale;
+    GLfloat h = tc.dimension.y * scale;
+
+    // update the VBO for each character
+    GLfloat vertices[6][4] =
+    {
+      { xpos,     ypos + h,   0.0, 0.0 },
+      { xpos,     ypos,       0.0, 1.0 },
+      { xpos + w, ypos,       1.0, 1.0 },
+
+      { xpos,     ypos + h,   0.0, 0.0 },
+      { xpos + w, ypos,       1.0, 1.0 },
+      { xpos + w, ypos + h,   1.0, 0.0 }
+    };
+
+    // render the specific glyph texture over the quad
+    glBindTexture(GL_TEXTURE_2D, tc.textureID);
+
+    // update content of VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // render the quad
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // advance cursors for next glyph (note that advance is number of 1/64 pixels)
+    x += (tc.advance >> 6) * scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
   }
+
+  // disable BLEND (because we did activate it at start)
+  glDisable(GL_BLEND);
 }

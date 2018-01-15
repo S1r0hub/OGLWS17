@@ -76,16 +76,20 @@ ApplicationSolar::ApplicationSolar(std::string const& resource_path, const unsig
     std::cout << "FrameBuffer disabled." << std::endl;
   }
 
-  if (!renderText)
+  if (!renderTexts)
   { std::cout << "Rendering text is disabled." << std::endl; }
   else
   {
     if (initializeFonts())
-    { std::cout << "TextLoader initialized." << std::endl; }
+    {
+      std::cout << "TextLoader initialized." << std::endl;
+      initializeTexts(*textLoader);
+      std::cout << texts.size() << " texts initialized." << std::endl;
+    }
     else
     {
       std::cout << "Failed to initialize TextLoader!" << std::endl;
-      renderText = false; // not possible to render text if this case occurs
+      renderTexts = false; // not possible to render text if this case occurs
     }
   }
 }
@@ -391,6 +395,12 @@ void ApplicationSolar::renderSkybox() const
 }
 
 
+void ApplicationSolar::renderText() const
+{
+  for (Text2D text : texts) { text.render(m_shaders.at("text").handle, 50, 50, 1.f); }
+}
+
+
 void ApplicationSolar::render() const
 {
   // bind the framebuffer to use it (draw to it)
@@ -408,6 +418,7 @@ void ApplicationSolar::render() const
   renderStars();     // render all stars
   renderObject(sun); // render the sun and all their planets with their moons
   renderOrbits(sun); // render the orbits of all the planets and the moons
+  if (renderTexts) { renderText(); } // render all the texts
 
   // draw the framebuffer using the default framebuffer to the screen
   if (useFrameBuffer) { frameBufferDrawing(); }
@@ -809,6 +820,11 @@ void ApplicationSolar::initializeShaderPrograms()
   m_shaders.at("screen").u_locs["frameBufferTex"] = -1;
   m_shaders.at("screen").u_locs["effectFlags"] = -1;
   m_shaders.at("screen").u_locs["Kernel3x3"] = -1;
+
+
+  // 2D text shader
+  m_shaders.emplace("text", shader_program{m_resource_path + "shaders/text2D.vert",
+                                           m_resource_path + "shaders/text2D.frag"});
 
 
   // register programs to which the view matrix should be uploaded after changes
@@ -1461,6 +1477,17 @@ bool ApplicationSolar::initializeFonts()
   textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 48);
   if (!textLoader->load()) { return false; }
   return true;
+}
+
+
+void ApplicationSolar::initializeTexts(TextLoader& tl)
+{
+  if (tl.hasFont("font1"))
+  {
+    Text2D test1{"Test", tl.getFont("font1"), glm::ivec3{200, 100, 50}, winWidth, winHeight};
+    texts.push_back(test1);
+  }
+  else { std::cout << "MISSING FONT 1!" << std::endl; }
 }
 
 

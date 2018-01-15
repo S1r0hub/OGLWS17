@@ -69,6 +69,9 @@ class ApplicationSolar : public Application
 
     // render the skybox
     void renderSkybox() const;
+    
+    // render all the texts
+    void renderText() const;
 
     // uses this shader and remembers the last one
     // returns true if the shader state changed
@@ -90,6 +93,7 @@ class ApplicationSolar : public Application
     void initializeSkybox();
     bool initializeFrameBuffer();
     bool initializeFonts();
+    void initializeTexts(TextLoader& tl);
     void updateView();
     void move();
 
@@ -199,8 +203,9 @@ class ApplicationSolar : public Application
     GLuint UBO_camera;        // uniform buffer object handle for camera data
     GLuint UBO_camera_bi = 0; // global binding index of the UBO
 
-    bool renderText = true;
+    bool renderTexts = true;
     std::shared_ptr<TextLoader> textLoader;
+    std::vector<Text2D> texts;
 };
 
 

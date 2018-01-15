@@ -14,6 +14,9 @@
 // structs and several included libraries
 #include "text_structs.hpp"
 
+// include possible text types
+#include "text_2D.hpp"
+
 
 /*
   Usage:
@@ -30,6 +33,13 @@ class TextLoader
     // Loads and stores a font and returns if this operation was successful.
     // Leave width or height at 0 to calculate it dynamically
     void addFont(std::string name, std::string fontPath, int height = 0, int width = 0);
+
+    // Check if a font exists.
+    bool hasFont(std::string name);
+
+    // Get the font with the name.
+    // (use hasFont() to check if the font exists!)
+    Font& getFont(std::string name);
 
     // Load all fonts and the glyphs
     bool load();
@@ -51,7 +61,7 @@ class TextLoader
     void cleanupResources();
 
     FT_Library ftlib;
-    std::vector<Font> fonts;
+    std::map<std::string, Font> fonts;
 };
 
 #endif
