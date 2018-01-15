@@ -59,6 +59,7 @@ bool TextLoader::load()
         << font.path << std::endl;
       continue;
     }
+    font.face = face;
 
     // font settings
     FT_Set_Pixel_Sizes(face, font.width, font.height); // set font width and height (0 = dynamically calculate)
@@ -77,7 +78,7 @@ bool TextLoader::load()
 }
 
 
-bool TextLoader::loadFontCharacters(Font& font)
+void TextLoader::loadFontCharacters(Font& font)
 {
   // disable byte-alignment restriction
   // (because we will only use a single byte (GL_RED) to represent the colors of the textures)
@@ -118,7 +119,7 @@ bool TextLoader::loadFontCharacters(Font& font)
       font.face->glyph->bitmap.rows,
       font.face->glyph->bitmap_left,
       font.face->glyph->bitmap_top,
-      font.face->glyph->advance.x
+      (GLuint) font.face->glyph->advance.x
     };
 
     // add the character information to the map

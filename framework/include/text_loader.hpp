@@ -41,7 +41,7 @@ class TextLoader
     bool initializeFreeTypeLibrary();
 
     // pre-load all characters for every font
-    bool loadFontCharacters(Font& font);
+    void loadFontCharacters(Font& font);
 
     // load and set the active glyph (data is then accessible using the face)
     // returns true if successful, false otherwise

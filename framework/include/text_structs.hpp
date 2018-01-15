@@ -23,6 +23,31 @@ using namespace gl;
 
 
 // ===============================================//
+// Struct for glyphs
+struct TextCharacter
+{
+  TextCharacter()
+    : textureID(0)
+    , dimension(glm::ivec2(0, 0))
+    , bearing(glm::ivec2(0, 0))
+    , advance(0)
+  {}
+
+  TextCharacter(GLuint texHandle, unsigned int width, unsigned int height, int offset_left, int offset_top, GLuint advance_)
+    : textureID(texHandle)
+    , dimension(glm::ivec2(width, height))
+    , bearing(offset_left, offset_top)
+    , advance(advance_)
+  {}
+
+  GLuint textureID;       // handle of texture
+  glm::ivec2 dimension;   // size of a glyph
+  glm::ivec2 bearing;     // offset from baseline to left/top
+  GLuint advance;         // horizontal offset to next glyph
+};
+
+
+// ===============================================//
 // Simple font struct for the text loader
 struct Font
 {
@@ -42,31 +67,6 @@ struct Font
 
   // all loaded characters/gylphs are stored by this map
   std::map<GLchar, TextCharacter> characters;
-};
-
-
-// ===============================================//
-// Struct for glyphs
-struct TextCharacter
-{
-  TextCharacter()
-    : textureID(0)
-    , dimension(glm::ivec2(0,0))
-    , bearing(glm::ivec2(0,0))
-    , advance(0)
-  {}
-
-  TextCharacter(GLuint texHandle, unsigned int width, unsigned int height, int offset_left, int offset_top, GLuint advance_)
-    : textureID(texHandle)
-    , dimension(glm::ivec2(width, height))
-    , bearing(offset_left, offset_top)
-    , advance(advance_)
-  {}
-
-  GLuint textureID;       // handle of texture
-  glm::ivec2 dimension;   // size of a glyph
-  glm::ivec2 bearing;     // offset from baseline to left/top
-  GLuint advance;         // horizontal offset to next glyph
 };
 
 
