@@ -6,8 +6,10 @@
 #include "text_2D.hpp"
 
 
-Text2D::Text2D(std::string text, Font& font, glm::ivec3 color, unsigned int winWidth, unsigned int winHeight)
+Text2D::Text2D(std::string text, Font& font, float pos_x, float pos_y, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
   : text_(text)
+  , pos_x_(pos_x)
+  , pos_y_(pos_y)
   , font_(font)
   , color_(color)
   , winWidth_(winWidth)
@@ -15,7 +17,12 @@ Text2D::Text2D(std::string text, Font& font, glm::ivec3 color, unsigned int winW
 {
   // create orthogonal projection matrix (for 2D view)
   projectionMatrix = glm::ortho(0.0f, (float) winWidth, 0.0f, (float) winHeight);
-  prepare(); // prepare VBO, VAO...
+
+  // ensure color is in range of 0 to 1
+  color = glm::normalize(color);
+
+  // prepare VBO, VAO...
+  prepare();
 }
 
 
@@ -46,8 +53,10 @@ void Text2D::prepare()
 }
 
 
-void Text2D::render(GLuint shaderProgram, float x, float y, float scale) const
+void Text2D::render(GLuint shaderProgram, float scale) const
 {
+  glEnable(GL_CULL_FACE);
+
   // enable blending for transparency
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -55,12 +64,19 @@ void Text2D::render(GLuint shaderProgram, float x, float y, float scale) const
   // use the desired shader program
   glUseProgram(shaderProgram);
 
+  // upload text projection matrix
+  GLuint uniformLoc = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
+  glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+
   // upload text color
-  GLuint uniformLoc = glGetUniformLocation(shaderProgram, "Color");
+  uniformLoc = glGetUniformLocation(shaderProgram, "Color");
   glUniform3f(uniformLoc, color_.r, color_.g, color_.b);
 
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(VAO);
+
+  float x = pos_x_;
+  float y = pos_y_;
 
   // for all characters of the string...
   for (std::string::const_iterator c = text_.begin(); c != text_.end(); ++c)
@@ -97,7 +113,6 @@ void Text2D::render(GLuint shaderProgram, float x, float y, float scale) const
     // update content of VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // render the quad
     glDrawArrays(GL_TRIANGLES, 0, 6);

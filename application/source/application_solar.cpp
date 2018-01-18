@@ -397,7 +397,10 @@ void ApplicationSolar::renderSkybox() const
 
 void ApplicationSolar::renderText() const
 {
-  for (Text2D text : texts) { text.render(m_shaders.at("text").handle, 50, 50, 1.f); }
+  for (Text2D text : texts)
+  {
+    text.render(m_shaders.at("text").handle, 1.f);
+  }
 }
 
 
@@ -1475,6 +1478,7 @@ bool ApplicationSolar::initializeFonts()
 {
   textLoader = std::make_shared<TextLoader>();
   textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 48);
+  textLoader->addFont("font2", m_resource_path + "fonts/source-code-pro/SourceCodePro-Black.ttf", 32);
   if (!textLoader->load()) { return false; }
   return true;
 }
@@ -1484,10 +1488,17 @@ void ApplicationSolar::initializeTexts(TextLoader& tl)
 {
   if (tl.hasFont("font1"))
   {
-    Text2D test1{"Test", tl.getFont("font1"), glm::ivec3{200, 100, 50}, winWidth, winHeight};
+    Text2D test1{"Test Text!", tl.getFont("font1"), 25.f, 25.f, glm::ivec3{1.0f, 0.8f, 0.3f}, winWidth, winHeight};
     texts.push_back(test1);
   }
   else { std::cout << "MISSING FONT 1!" << std::endl; }
+
+  if (tl.hasFont("font2"))
+  {
+    Text2D test2{ "Another Text", tl.getFont("font2"), 800.f, 500.f, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight };
+    texts.push_back(test2);
+  }
+  else { std::cout << "MISSING FONT 2!" << std::endl; }
 }
 
 

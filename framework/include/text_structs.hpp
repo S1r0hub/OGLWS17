@@ -15,6 +15,7 @@
 // OPENGL includes
 #include <glbinding/gl/gl.h>
 #include <glm/glm.hpp> // (opengl maths)
+#include <glm/gtc/type_ptr.hpp>
 using namespace gl;
 
 // include freetype font libraries

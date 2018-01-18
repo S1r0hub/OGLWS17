@@ -26,7 +26,7 @@
 class TextLoader
 {
   public:
-
+    
     // clean up resources used by freetype
     ~TextLoader();
 
