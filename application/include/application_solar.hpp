@@ -205,7 +205,7 @@ class ApplicationSolar : public Application
 
     bool renderTexts = true;
     std::shared_ptr<TextLoader> textLoader;
-    std::vector<Text2D> texts;
+    mutable std::vector<std::shared_ptr<Text>> texts;
 };
 
 

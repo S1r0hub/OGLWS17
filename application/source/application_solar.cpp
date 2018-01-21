@@ -397,9 +397,16 @@ void ApplicationSolar::renderSkybox() const
 
 void ApplicationSolar::renderText() const
 {
-  for (Text2D text : texts)
+  // a little test section for the GUI-text (let it show the runtime and move)
+  double progTime = glfwGetTime();
+  std::string outTime = std::to_string(glm::round(progTime));
+  outTime.erase(outTime.find_last_not_of('0'), std::string::npos); // remove trailing zeros
+  texts.at(0)->setText("Runtime: " + outTime + " sec");
+  texts.at(0)->setPosition(25.f + glm::cos(progTime) * 20, 25.f + glm::sin(progTime) * 20);
+
+  for (auto& text : texts)
   {
-    text.render(m_shaders.at("text").handle, 1.f);
+    text->render(m_shaders.at("text").handle, 1.f);
   }
 }
 
@@ -1477,8 +1484,8 @@ void ApplicationSolar::updateUniformBuffer(GLuint bufferHandle, void* sourceData
 bool ApplicationSolar::initializeFonts()
 {
   textLoader = std::make_shared<TextLoader>();
-  textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 48);
-  textLoader->addFont("font2", m_resource_path + "fonts/source-code-pro/SourceCodePro-Black.ttf", 32);
+  textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 32);
+  textLoader->addFont("font2", m_resource_path + "fonts/source-code-pro/SourceCodePro-Black.ttf", 20);
   if (!textLoader->load()) { return false; }
   return true;
 }
@@ -1488,15 +1495,15 @@ void ApplicationSolar::initializeTexts(TextLoader& tl)
 {
   if (tl.hasFont("font1"))
   {
-    Text2D test1{"Test Text!", tl.getFont("font1"), 25.f, 25.f, glm::ivec3{1.0f, 0.8f, 0.3f}, winWidth, winHeight};
-    texts.push_back(test1);
+    Text2D test1{"Moving 2D Text!", tl.getFont("font1"), glm::fvec2{25.f}, glm::ivec3{1.0f, 0.8f, 0.3f}, winWidth, winHeight};
+    texts.push_back(std::make_shared<Text2D>(test1));
   }
   else { std::cout << "MISSING FONT 1!" << std::endl; }
 
   if (tl.hasFont("font2"))
   {
-    Text2D test2{ "Another Text", tl.getFont("font2"), 800.f, 500.f, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight };
-    texts.push_back(test2);
+    Text2D test2{"Static 2D Text", tl.getFont("font2"), glm::fvec2{(float) winWidth - 200.f, (float) winHeight - 50.f}, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight};
+    texts.push_back(std::make_shared<Text2D>(test2));
   }
   else { std::cout << "MISSING FONT 2!" << std::endl; }
 }

@@ -6,14 +6,8 @@
 #include "text_2D.hpp"
 
 
-Text2D::Text2D(std::string text, Font& font, float pos_x, float pos_y, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
-  : text_(text)
-  , pos_x_(pos_x)
-  , pos_y_(pos_y)
-  , font_(font)
-  , color_(color)
-  , winWidth_(winWidth)
-  , winHeight_(winHeight)
+Text2D::Text2D(std::string text, Font& font, glm::fvec2 pos, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
+  : Text(text, font, glm::fvec3(pos.x, pos.y, 1.f), color, winWidth, winHeight) 
 {
   // create orthogonal projection matrix (for 2D view)
   projectionMatrix = glm::ortho(0.0f, (float) winWidth, 0.0f, (float) winHeight);
@@ -23,6 +17,12 @@ Text2D::Text2D(std::string text, Font& font, float pos_x, float pos_y, glm::fvec
 
   // prepare VBO, VAO...
   prepare();
+}
+
+
+void Text2D::setPosition(float x, float y)
+{
+  Text::setPosition(glm::fvec3{x,y,1.f});
 }
 
 
@@ -75,8 +75,8 @@ void Text2D::render(GLuint shaderProgram, float scale) const
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(VAO);
 
-  float x = pos_x_;
-  float y = pos_y_;
+  float x = pos_.x;
+  float y = pos_.y;
 
   // for all characters of the string...
   for (std::string::const_iterator c = text_.begin(); c != text_.end(); ++c)
