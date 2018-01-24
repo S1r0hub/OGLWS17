@@ -18,6 +18,8 @@
 #include <map>
 #include "texture_info.hpp" // included for texturing
 
+#include "text_3D.hpp"
+
 
 // A struct holding information about a planet.
 class Planet
@@ -53,6 +55,15 @@ class Planet
     // set if a texture should be used or not
     void useTexture(bool use);
 
+    // Set the texture object for the specific type.
+    // This will also set useTexture to true if the ID <= 0
+    // factor = strength of the mapping (e.g. for normal mapping)
+    // type = diffuse (default), normal, specular, ...
+    void setTexture(texture_info info, std::string type = "diffuse", float factor = 1.0f);
+
+    // set the 3D text of this planet
+    void set3DText(std::shared_ptr<Text3D> text);
+
 
 
     // GETTER
@@ -85,13 +96,6 @@ class Planet
 
     glm::fmat4 getModelMatrix();
 
-
-    // Set the texture object for the specific type.
-    // This will also set useTexture to true if the ID <= 0
-    // factor = strength of the mapping (e.g. for normal mapping)
-    // type = diffuse (default), normal, specular, ...
-    void setTexture(texture_info info, std::string type = "diffuse", float factor = 1.0f);
-
     // Returns texture info.
     // ID will be -1 if the texture does not exist,
     // so ensure to check this case before using it.
@@ -102,6 +106,9 @@ class Planet
     // The returned value wont be "true" until the texture ID is set!
     // type = diffuse (default), normal, specular, ...
     bool hasTexture(std::string type = "diffuse");
+
+    // returns the 3DText pointer that can also be a nullptr if not set before!
+    std::shared_ptr<Text3D> get3DText();
 
 
   private:
@@ -173,6 +180,9 @@ class Planet
 
     // holds the index of the texture loaded in the application
     std::map<std::string, texture_info> textures;
+
+    // 3D text (can also be nullptr if not set)
+    std::shared_ptr<Text3D> text3D;
 };
 
 #endif

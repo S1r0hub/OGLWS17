@@ -1,17 +1,14 @@
-// APPLICATION SOLAR - Text2D Source
+// APPLICATION SOLAR - Text3D Source
 // COMPUTER GRAPHICS WiSe 17/18 - Assignments
 // Leon H. (115853)
 // Marcel H. (116610)
 
-#include "text_2D.hpp"
+#include "text_3D.hpp"
 
 
-Text2D::Text2D(std::string text, std::shared_ptr<Font> font, glm::fvec2 pos, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
-  : Text(text, font, glm::fvec3(pos.x, pos.y, 1.f), color, winWidth, winHeight) 
+Text3D::Text3D(std::string text, std::shared_ptr<Font> font, glm::fvec3 pos, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
+  : Text(text, font, pos, color, winWidth, winHeight)
 {
-  // create orthogonal projection matrix (for 2D view)
-  projectionMatrix = glm::ortho(0.0f, (float) winWidth, 0.0f, (float) winHeight);
-
   // ensure color is in range of 0 to 1
   color = glm::normalize(color);
 
@@ -20,13 +17,19 @@ Text2D::Text2D(std::string text, std::shared_ptr<Font> font, glm::fvec2 pos, glm
 }
 
 
-void Text2D::setPosition(float x, float y)
+void Text3D::setModelMatrix(glm::mat4& modelMatrix)
 {
-  Text::setPosition(glm::fvec3{x,y,1.f});
+  modelMatrix_ = modelMatrix;
 }
 
 
-void Text2D::prepare()
+void Text3D::setPosition(float x, float y, float z)
+{
+  Text::setPosition(glm::fvec3{x,y,z});
+}
+
+
+void Text3D::prepare()
 {
   // create vertex array object (VAO) and vertex buffer object (VBO)
   glGenVertexArrays(1, &VAO);
@@ -45,17 +48,17 @@ void Text2D::prepare()
 
   // location 1 in shader (= in_TexCoords / 2D Texture Position)
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*) (2* sizeof(GLfloat)));
-  
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+
   // "unbind" the buffer (not needed usually but done to ensure no later changes)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  //glBindVertexArray(0); // no need because we will quickly change anyway
 }
 
 
-void Text2D::render(GLuint shaderProgram, float scale) const
+void Text3D::render(GLuint shaderProgram, float scale) const
 {
-  glEnable(GL_CULL_FACE);
+  //glEnable(GL_CULL_FACE);
+  glDepthMask(GL_FALSE);
 
   // enable blending for transparency
   glEnable(GL_BLEND);
@@ -64,9 +67,9 @@ void Text2D::render(GLuint shaderProgram, float scale) const
   // use the desired shader program
   glUseProgram(shaderProgram);
 
-  // upload text projection matrix
-  GLuint uniformLoc = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
-  glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+  // upload text model matrix
+  GLuint uniformLoc = glGetUniformLocation(shaderProgram, "ModelMatrix");
+  glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix_));
 
   // upload text color
   uniformLoc = glGetUniformLocation(shaderProgram, "Color");
@@ -126,4 +129,5 @@ void Text2D::render(GLuint shaderProgram, float scale) const
 
   // disable BLEND (because we did activate it at start)
   glDisable(GL_BLEND);
+  glDepthMask(GL_TRUE);
 }

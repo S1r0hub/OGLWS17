@@ -16,6 +16,7 @@
 
 // include possible text types
 #include "text_2D.hpp"
+#include "text_3D.hpp"
 
 
 /*
@@ -43,6 +44,9 @@ class TextLoader
 
     // Load all fonts and the glyphs
     bool load();
+
+    // call this function before closing the program to clean textures
+    void cleanupFontTextures();
 
 
   private:

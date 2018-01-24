@@ -10,6 +10,7 @@
 TextLoader::~TextLoader()
 {
   //cleanupResources(); // already done after loading
+  //cleanupFontTextures(); // should be performed manually
 }
 
 
@@ -21,6 +22,25 @@ void TextLoader::cleanupResources()
   if (ftlib == nullptr)
   { std::cout << "WARN: FreeType Library was a nullptr!" << std::endl; }
   else { FT_Done_FreeType(ftlib); }
+}
+
+
+void TextLoader::cleanupFontTextures()
+{
+  for (auto const& font : fonts)
+  {
+    std::vector<GLuint> textureIDs;
+
+    // add all texture IDs of the characters to the vector
+    for (auto const& tc : font.second.characters)
+    { textureIDs.push_back(tc.second.textureID); }
+
+    // clean textures
+    if (textureIDs.size() > 0)
+    {
+      glDeleteTextures(textureIDs.size(), textureIDs.data());
+    }
+  }
 }
 
 

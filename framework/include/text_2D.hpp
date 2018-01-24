@@ -17,13 +17,13 @@ class Text2D : public Text
   public:
 
     // the text and integer vector for the color (range 0-1)
-    Text2D(std::string text, Font& font, glm::fvec2 pos, glm::fvec3 color = glm::fvec3{1.0f}, unsigned int winWidth = 800, unsigned int winHeight = 600);
+    Text2D(std::string text, std::shared_ptr<Font> font, glm::fvec2 pos, glm::fvec3 color = glm::fvec3{1.0f}, unsigned int winWidth = 800, unsigned int winHeight = 600);
 
     // change the location of the text
-    void setPosition(float x, float y);
+    void setPosition(float x = 1.f, float y = 1.f);
 
     // render to screen
-    void render(GLuint shaderProgram, float scale) const override;
+    void render(GLuint shaderProgram, float scale = 1.f) const override;
 
 
   private:

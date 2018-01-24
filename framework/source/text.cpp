@@ -7,7 +7,7 @@
 #include "text.hpp"
 
 
-Text::Text(std::string text, Font& font, glm::fvec3 pos, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
+Text::Text(std::string text, std::shared_ptr<Font> font, glm::fvec3 pos, glm::fvec3 color, unsigned int winWidth, unsigned int winHeight)
   : text_(text)
   , font_(font)
   , pos_(pos)
@@ -42,6 +42,11 @@ std::string Text::getText()
 void Text::setText(std::string text)
 {
   text_ = text;
+}
+
+void Text::setFont(std::shared_ptr<Font> font)
+{
+  font_ = font;
 }
 
 void Text::setPosition(glm::fvec3 pos)

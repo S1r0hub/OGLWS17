@@ -92,6 +92,12 @@ bool Planet::hasTexture(std::string type)
 }
 
 
+std::shared_ptr<Text3D> Planet::get3DText()
+{
+  return text3D;
+}
+
+
 
 // SETTER
 
@@ -123,11 +129,16 @@ void Planet::isSun(bool isASun) { sun = isASun; }
 
 
 // TEXTURE SETTER
-
 void Planet::setTexture(texture_info info, std::string type, float factor)
 {
   info.setFactor(factor);
   textures[type] = info;
+}
+
+
+void Planet::set3DText(std::shared_ptr<Text3D> text)
+{
+  text3D = text;
 }
 
 

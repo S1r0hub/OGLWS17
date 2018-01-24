@@ -319,6 +319,10 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
     }
   }
+
+  // render the planets 3D text
+  lastProg = ""; // set last prog to another so shader will be changed after this loop
+  renderPlanetText(planet, model_matrix);
 }
 
 
@@ -401,12 +405,28 @@ void ApplicationSolar::renderText() const
   double progTime = glfwGetTime();
   std::string outTime = std::to_string(glm::round(progTime));
   outTime.erase(outTime.find_last_not_of('0'), std::string::npos); // remove trailing zeros
-  texts.at(0)->setText("Runtime: " + outTime + " sec");
-  texts.at(0)->setPosition(25.f + glm::cos(progTime) * 20, 25.f + glm::sin(progTime) * 20);
+  texts2D.at(0)->setText("Runtime: " + outTime + " sec");
+  texts2D.at(0)->setPosition(25.f + glm::cos(progTime) * 20, 25.f + glm::sin(progTime) * 20);
 
-  for (auto& text : texts)
+  // render gui (2D) texts
+  for (auto& text : texts2D)
   {
-    text->render(m_shaders.at("text").handle, 1.f);
+    text->render(m_shaders.at("text2D").handle);
+  }
+}
+
+
+void ApplicationSolar::renderPlanetText(std::shared_ptr<Planet> planet, glm::fmat4& modelMatrix) const
+{
+  std::shared_ptr<Text3D> t3D = planet->get3DText();
+
+  if (t3D != nullptr)
+  {
+    //glm::fmat4 modelMatrix = planet->getModelMatrix();
+    modelMatrix = glm::translate(modelMatrix, t3D->getPosition());
+    //modelMatrix = glm::scale(modelMat, glm::fvec3(0.5f));
+    t3D->setModelMatrix(modelMatrix);
+    t3D->render(m_shaders.at("text3D").handle, 0.05f);
   }
 }
 
@@ -544,6 +564,7 @@ void ApplicationSolar::uploadUniforms()
   // query the uniform block index from all shaders that use a uniform buffer object (assignment 6)
   queryUniformBlockIndex(UBO_camera_bi, "planet", "camera_data");
   queryUniformBlockIndex(UBO_camera_bi, "sun", "camera_data");
+  queryUniformBlockIndex(UBO_camera_bi, "text3D", "camera_data");
 
   updateView();
   updateProjection();
@@ -833,8 +854,13 @@ void ApplicationSolar::initializeShaderPrograms()
 
 
   // 2D text shader
-  m_shaders.emplace("text", shader_program{m_resource_path + "shaders/text2D.vert",
+  m_shaders.emplace("text2D", shader_program{m_resource_path + "shaders/text2D.vert",
                                            m_resource_path + "shaders/text2D.frag"});
+
+
+  // 3D text shader
+  m_shaders.emplace("text3D", shader_program{m_resource_path + "shaders/text3D.vert",
+                                             m_resource_path + "shaders/text3D.frag"});
 
 
   // register programs to which the view matrix should be uploaded after changes
@@ -1165,6 +1191,14 @@ void ApplicationSolar::initializePlanets()
   sun->addMoon(neptune);
 
 
+  // add planet 3D text
+  Text3D text1{"Earth", nullptr, glm::fvec3{0.f, 10.f, 0.f}, glm::fvec3{1.0f}, winWidth, winHeight};
+  std::shared_ptr<Text3D> t1 = std::make_shared<Text3D>(text1);
+  
+  earth->set3DText(t1);
+  texts3D.push_back(t1);
+
+
   // test debug
   std::cout << "(i) Sun has a size of " << size_sun << std::endl;
   std::cout << "(i) Rotation angle for \"" << sun->getName() << "\" per second is: " << sun->getRotationAngle(time_multiplier) << std::endl;
@@ -1466,7 +1500,7 @@ void ApplicationSolar::queryUniformBlockIndex(GLuint blockIndex, std::string sha
   GLuint blockIndexLocation = glGetUniformBlockIndex(m_shaders.at(shaderName).handle, uniformName);
 
   // upload global binding point value to the shaders block index location
-  glUniformBlockBinding(m_shaders.at("planet").handle, blockIndexLocation, blockIndex);
+  glUniformBlockBinding(m_shaders.at(shaderName).handle, blockIndexLocation, blockIndex);
 }
 
 
@@ -1495,17 +1529,26 @@ void ApplicationSolar::initializeTexts(TextLoader& tl)
 {
   if (tl.hasFont("font1"))
   {
-    Text2D test1{"Moving 2D Text!", tl.getFont("font1"), glm::fvec2{25.f}, glm::ivec3{1.0f, 0.8f, 0.3f}, winWidth, winHeight};
-    texts.push_back(std::make_shared<Text2D>(test1));
+    Text2D test1{"Moving 2D Text!", std::make_shared<Font>(tl.getFont("font1")), glm::fvec2{25.f}, glm::ivec3{1.0f, 0.8f, 0.3f}, winWidth, winHeight};
+    texts2D.push_back(std::make_shared<Text2D>(test1));
   }
   else { std::cout << "MISSING FONT 1!" << std::endl; }
 
   if (tl.hasFont("font2"))
   {
-    Text2D test2{"Static 2D Text", tl.getFont("font2"), glm::fvec2{(float) winWidth - 200.f, (float) winHeight - 50.f}, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight};
-    texts.push_back(std::make_shared<Text2D>(test2));
+    std::shared_ptr<Font> font2 = std::make_shared<Font>(tl.getFont("font2"));
+    Text2D test2{"Static 2D Text", font2, glm::fvec2{(float) winWidth - 200.f, (float) winHeight - 50.f}, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight};
+    texts2D.push_back(std::make_shared<Text2D>(test2));
+
+    // set the font for the planet texts
+    for (auto& text : texts3D)
+    { text->setFont(font2); }
   }
   else { std::cout << "MISSING FONT 2!" << std::endl; }
+
+  // add the different vectors to the vector containing all types of text
+  texts.insert(texts.end(), texts2D.begin(), texts2D.end());
+  texts.insert(texts.end(), texts3D.begin(), texts3D.end());
 }
 
 
@@ -1516,6 +1559,9 @@ ApplicationSolar::~ApplicationSolar()
   // clean up loaded textures
   glDeleteTextures(loaded_textures.size(), loaded_textures.data());
   glDeleteTextures(1, &frameBufferTexture);
+
+  // clean up text character textures for all fonts
+  textLoader->cleanupFontTextures();
 
   // planets
   glDeleteBuffers(1, &planet_object.vertex_BO);

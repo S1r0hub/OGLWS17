@@ -73,6 +73,9 @@ class ApplicationSolar : public Application
     // render all the texts
     void renderText() const;
 
+    // render a planets 3D text
+    void renderPlanetText(std::shared_ptr<Planet> planet, glm::fmat4& modelMatrix) const;
+
     // uses this shader and remembers the last one
     // returns true if the shader state changed
     bool useShader(std::string shaderName) const;
@@ -205,7 +208,9 @@ class ApplicationSolar : public Application
 
     bool renderTexts = true;
     std::shared_ptr<TextLoader> textLoader;
-    mutable std::vector<std::shared_ptr<Text>> texts;
+    mutable std::vector<std::shared_ptr<Text2D>> texts2D;
+    mutable std::vector<std::shared_ptr<Text3D>> texts3D; // stored in planet object as well
+    std::vector<std::shared_ptr<Text>> texts;
 };
 
 
