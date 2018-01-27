@@ -40,13 +40,11 @@ Everything marked with [] is an optional task.
 - [x] Uniform Buffer Object to pass View- and Projection-Matrices to shaders
 - [ ] [light struct in Phong shader and Storage Block for dynamic array of lights]
 - [ ] [use the lights from the beforementioned array]
-
-...
-
-> to be continued!
-
-...
-
+----
+#### Bonus Assignment 
+- [x] Text Renderer
+  
+  
 ----
   
   
@@ -69,6 +67,7 @@ Everything marked with [] is an optional task.
 * O = toggle planet orbits
 * 1 = use blinn-phong shading
 * 2 = use cel-shading
+* 3 = toggle text rendering
   
 #### Effects
 * 7 = toggle effect: luminance preserving grayscale
@@ -88,6 +87,7 @@ Everything marked with [] is an optional task.
 * [**GLM**](glm.g-truc.net/) for mathematics
 * [**tinyobjloader**](http://syoyo.github.io/tinyobjloader/) for model loading
 * [**stb_image**](https://github.com/nothings/stb) for image loading
+* [**freetype-2.9**](https://www.freetype.org/index.html) for font loading
   
 ----
   
@@ -98,6 +98,7 @@ this framework is licensed under the GPL v3
 * **glm** is licensed under the Happy Bunny License (Modified MIT)
 * **tinyobjloader** is licensed under 2 clause BSD
 * **stb_image** is public domain
+* **freetype-2.9** is licensed under FTL and GPLv2
   
   
 ## Maintainers

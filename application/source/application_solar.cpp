@@ -27,6 +27,7 @@ using namespace gl;
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_access.hpp>
 
+#include <glm/gtx/vector_angle.hpp>
 
 // include texture loader
 #include "texture_loader.hpp"
@@ -319,10 +320,6 @@ void ApplicationSolar::renderObject(std::shared_ptr<Planet> planet) const
       glDrawElements(planet_object.draw_mode, planet_object.num_elements, model::INDEX.type, NULL);
     }
   }
-
-  // render the planets 3D text
-  lastProg = ""; // set last prog to another so shader will be changed after this loop
-  renderPlanetText(planet, model_matrix);
 }
 
 
@@ -406,7 +403,7 @@ void ApplicationSolar::renderText() const
   std::string outTime = std::to_string(glm::round(progTime));
   outTime.erase(outTime.find_last_not_of('0'), std::string::npos); // remove trailing zeros
   texts2D.at(0)->setText("Runtime: " + outTime + " sec");
-  texts2D.at(0)->setPosition(25.f + glm::cos(progTime) * 20, 25.f + glm::sin(progTime) * 20);
+  //texts2D.at(0)->setPosition(25.f + glm::cos(progTime) * 20, 25.f + glm::sin(progTime) * 20);
 
   // render gui (2D) texts
   for (auto& text : texts2D)
@@ -416,18 +413,62 @@ void ApplicationSolar::renderText() const
 }
 
 
-void ApplicationSolar::renderPlanetText(std::shared_ptr<Planet> planet, glm::fmat4& modelMatrix) const
+void ApplicationSolar::renderPlanetTexts(std::shared_ptr<Planet> planet, glm::fvec3& camPos) const
 {
+  // set planet origin (unscaled model matrix)
+  glm::fmat4 model_matrix = planet->getModelMatrix();
+
+  // rotate around planet origin
+  model_matrix = glm::rotate(model_matrix, float(glfwGetTime()) * planet->getOrbitRotationAngle(time_multiplier), planet->getRotationDir());
+
+  // translate planet position after rotating it (changes the orbit)
+  model_matrix = glm::translate(model_matrix, planet->getOrbitTranslation());
+
+
+  // calculate the angle we have to rotate the text to look at the camera
+  // (WE CURRENTLY DO THIS IN THE SHADER SO THE FOLLOWING IS JUST ANOTHER WAY)
+  /*
+  glm::fvec3 objPos = glm::fvec3{glm::column(model_matrix, 3)};
+  if (glm::length(objPos) == 0) { objPos = glm::fvec3{0.f, 0.f, 1.f}; } // sun and moon
+  objPos.y = 0;
+  camPos.y = 0;
+  float angle = glm::angle(glm::normalize(objPos), glm::normalize(camPos - objPos));
+  glm::fvec3 crossObjCam = glm::cross(objPos, camPos);
+  float dir = glm::dot(crossObjCam, glm::fvec3{0.f, 1.f, 0.f});
+  if (dir < 0) { angle = -angle; }
+  */
+
+
+  // render sub-planets/moons/objects
+  std::deque<std::shared_ptr<Planet>> moons = planet->getMoons();
+  std::shared_ptr<Planet> moon;
+  for (unsigned int i = 0; i < moons.size(); i++)
+  {
+    moon = moons.at(i);
+    // use the current model matrix of the origin planet (transformed to position)
+    moon->setModelMatrix(model_matrix);
+    renderPlanetTexts(moon, camPos);
+  }
+
+
+  // rotate to the camera using our calculated angle
+  //model_matrix = glm::rotate(model_matrix, angle, glm::fvec3{0.f, 1.f, 0.f});
+
+
+  // get the planets 3D text or nullptr if not available
   std::shared_ptr<Text3D> t3D = planet->get3DText();
 
   if (t3D != nullptr)
   {
-    //glm::fmat4 modelMatrix = planet->getModelMatrix();
-    modelMatrix = glm::translate(modelMatrix, t3D->getPosition());
-    //modelMatrix = glm::scale(modelMat, glm::fvec3(0.5f));
-    t3D->setModelMatrix(modelMatrix);
-    t3D->render(m_shaders.at("text3D").handle, 0.05f);
+    // move up (above planet)
+    model_matrix = glm::translate(model_matrix, planet->getSize() * glm::fvec3{0.f, 1.2f, 0.f});
+    model_matrix = glm::scale(model_matrix, planet->getSize() * glm::fvec3{1.f});
+    t3D->setModelMatrix(model_matrix);
+    t3D->render(m_shaders.at("text3D").handle, 0.005f);
   }
+
+  // render the planets 3D text
+  lastProg = ""; // set last prog to another so shader will be changed after this loop
 }
 
 
@@ -448,7 +489,15 @@ void ApplicationSolar::render() const
   renderStars();     // render all stars
   renderObject(sun); // render the sun and all their planets with their moons
   renderOrbits(sun); // render the orbits of all the planets and the moons
-  if (renderTexts) { renderText(); } // render all the texts
+  
+  if (renderTexts)   // render all the texts
+  {
+    glm::fmat4 ivm = glm::inverse(view_matrix);
+    glm::fvec3 camPos = glm::fvec3{glm::column(ivm, 3)};
+
+    renderPlanetTexts(sun, camPos);
+    renderText();
+  }
 
   // draw the framebuffer using the default framebuffer to the screen
   if (useFrameBuffer) { frameBufferDrawing(); }
@@ -618,6 +667,13 @@ void ApplicationSolar::keyCallback(int key, int scancode, int action, int mods)
         if (shadingMode == 1 || !active) { break; }
         std::cout << "Using Cel Shading now." << std::endl;
         shadingMode = 1;
+        break;
+
+      case GLFW_KEY_3: // to enable/disable text rendering
+        if (active) {
+          renderTexts = !renderTexts;
+          std::cout << "Rendering text " << (renderTexts ? "enabled" : "disabled") << std::endl;
+        }
         break;
 
       case GLFW_KEY_T: // to enable/disable textures
@@ -1137,7 +1193,7 @@ void ApplicationSolar::initializePlanets()
   std::shared_ptr<Planet> earth = std::make_shared<Planet>("Earth", size_earth, ot_earth, dt_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_earth });
   earth->setColor(50, 50, 255);
 
-  std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Mond", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_m_earth });
+  std::shared_ptr<Planet> moon1 = std::make_shared<Planet>("Moon", size_m_earth, ot_m_earth, dt_m_earth, glm::fvec3{}, glm::fvec3{ 0.0f, 0.0f, dist_m_earth });
   moon1->setColor(50, 50, 50);
   earth->addMoon(moon1);
     
@@ -1191,18 +1247,40 @@ void ApplicationSolar::initializePlanets()
   sun->addMoon(neptune);
 
 
-  // add planet 3D text
-  Text3D text1{"Earth", nullptr, glm::fvec3{0.f, 10.f, 0.f}, glm::fvec3{1.0f}, winWidth, winHeight};
-  std::shared_ptr<Text3D> t1 = std::make_shared<Text3D>(text1);
-  
+  // add planet 3D text (NOW: done for all planets and moons by add3DText function)
+  /*
+  Text3D text{"Earth", nullptr, glm::fvec3{0.f, 0.f, 0.f}, glm::fvec3{1.0f}, winWidth, winHeight};
+  std::shared_ptr<Text3D> t1 = std::make_shared<Text3D>(text);
   earth->set3DText(t1);
   texts3D.push_back(t1);
+  */
+
+  // add a 3D text for all planets and moons
+  add3DText(sun, true);
 
 
   // test debug
   std::cout << "(i) Sun has a size of " << size_sun << std::endl;
   std::cout << "(i) Rotation angle for \"" << sun->getName() << "\" per second is: " << sun->getRotationAngle(time_multiplier) << std::endl;
   std::cout << "(i) Textures loaded: " << loaded_textures.size() << std::endl;
+}
+
+
+// adds 3D text for the planet
+void ApplicationSolar::add3DText(std::shared_ptr<Planet> planet, bool moons)
+{
+  // recursively call this method again for all moons
+  if (moons)
+  {
+    for (std::shared_ptr<Planet> sub : planet->getMoons())
+    { add3DText(sub, true); }
+  }
+
+  Text3D text{planet->getName(), nullptr, glm::fvec3{0.f, 0.f, 0.f}, glm::fvec3{1.0f}, winWidth, winHeight};
+  std::shared_ptr<Text3D> t1 = std::make_shared<Text3D>(text);
+  planet->set3DText(t1);  // add the text to the planet
+  planet->get3DText()->setColor(planet->getColorVector()); // set text color to be planet color
+  texts3D.push_back(t1);  // used to add a font to these 3D texts later
 }
 
 
@@ -1520,6 +1598,7 @@ bool ApplicationSolar::initializeFonts()
   textLoader = std::make_shared<TextLoader>();
   textLoader->addFont("font1", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 32);
   textLoader->addFont("font2", m_resource_path + "fonts/source-code-pro/SourceCodePro-Black.ttf", 20);
+  textLoader->addFont("planetfont", m_resource_path + "fonts/source-code-pro/SourceCodePro-Regular.ttf", 64);
   if (!textLoader->load()) { return false; }
   return true;
 }
@@ -1539,12 +1618,18 @@ void ApplicationSolar::initializeTexts(TextLoader& tl)
     std::shared_ptr<Font> font2 = std::make_shared<Font>(tl.getFont("font2"));
     Text2D test2{"Static 2D Text", font2, glm::fvec2{(float) winWidth - 200.f, (float) winHeight - 50.f}, glm::ivec3{ 0.2f, 0.2f, 1.0f }, winWidth, winHeight};
     texts2D.push_back(std::make_shared<Text2D>(test2));
-
-    // set the font for the planet texts
-    for (auto& text : texts3D)
-    { text->setFont(font2); }
   }
   else { std::cout << "MISSING FONT 2!" << std::endl; }
+
+
+  if (tl.hasFont("planetfont"))
+  {
+    std::shared_ptr<Font> font2 = std::make_shared<Font>(tl.getFont("planetfont"));
+    
+    // set the font for the planet texts
+    for (auto& text : texts3D) { text->setFont(font2); }
+  }
+  else { std::cout << "MISSING PLANET FONT!" << std::endl; }
 
   // add the different vectors to the vector containing all types of text
   texts.insert(texts.end(), texts2D.begin(), texts2D.end());

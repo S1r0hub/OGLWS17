@@ -10,6 +10,7 @@
 
 
 #include <iostream>
+#include <vector>
 
 // for ortho function
 #include <glm/gtc/matrix_transform.hpp>
@@ -64,7 +65,7 @@ class Text
 
     std::shared_ptr<Font> font_;
     std::string text_;
-    glm::ivec3 color_;
+    glm::fvec3 color_;
     glm::fvec3 pos_;
 
     // width and height of the application window

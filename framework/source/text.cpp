@@ -56,12 +56,10 @@ void Text::setPosition(glm::fvec3 pos)
 
 void Text::setPosition(float x, float y, float z)
 {
-  pos_ = glm::fvec3{x,y,z};
+  setPosition(glm::fvec3{x,y,z});
 }
 
 void Text::setColor(glm::fvec3 color)
 {
   color_ = color;
 }
-
-

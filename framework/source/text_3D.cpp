@@ -20,6 +20,7 @@ Text3D::Text3D(std::string text, std::shared_ptr<Font> font, glm::fvec3 pos, glm
 void Text3D::setModelMatrix(glm::mat4& modelMatrix)
 {
   modelMatrix_ = modelMatrix;
+  modelMatrixUpdated = true;
 }
 
 
@@ -57,8 +58,12 @@ void Text3D::prepare()
 
 void Text3D::render(GLuint shaderProgram, float scale) const
 {
-  //glEnable(GL_CULL_FACE);
+  // allow rendering of the back faces (disable face culling)
+  glDisable(GL_CULL_FACE);
+
+  // disable depth mask
   glDepthMask(GL_FALSE);
+  //glDepthFunc(GL_GREATER);
 
   // enable blending for transparency
   glEnable(GL_BLEND);
@@ -68,17 +73,54 @@ void Text3D::render(GLuint shaderProgram, float scale) const
   glUseProgram(shaderProgram);
 
   // upload text model matrix
-  GLuint uniformLoc = glGetUniformLocation(shaderProgram, "ModelMatrix");
-  glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix_));
+  if (modelMatrixUpdated)
+  {
+    GLuint uniformLocMM = glGetUniformLocation(shaderProgram, "ModelMatrix");
+    glUniformMatrix4fv(uniformLocMM, 1, GL_FALSE, glm::value_ptr(modelMatrix_));
+    modelMatrixUpdated = false;
+  }
 
   // upload text color
-  uniformLoc = glGetUniformLocation(shaderProgram, "Color");
-  glUniform3f(uniformLoc, color_.r, color_.g, color_.b);
+  GLuint uniformLocTC = glGetUniformLocation(shaderProgram, "Color");
+  glUniform3f(uniformLocTC, color_.r, color_.g, color_.b);
 
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(VAO);
 
   float x = pos_.x;
+
+  // calculate the text width so that we can center the text
+  float textWidth = -1.f;
+
+  float xpos_last = -1.0f;
+  float xpos_first = 0.0f;
+  bool firstLoop = true;
+
+  for (std::string::const_iterator c = text_.begin(); c != text_.end(); ++c)
+  {
+    TextCharacter tc;
+    try { tc = font_->characters.at(*c); }
+    catch (...) { continue; }
+
+    // x position of the character
+    GLfloat xpos = x + tc.bearing.x * scale;
+    if (firstLoop) { xpos_first = xpos; firstLoop = false; }
+
+    // width of the character
+    GLfloat w = tc.dimension.x * scale;
+
+    // get position + width of the character as last position
+    xpos_last = xpos + w;
+
+    // the "advance cursors" for next glyph (advance is number of 1/64 pixels)
+    x += (tc.advance >> 6) * scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+  }
+
+  // calculate the final text width (is -1 if something fails so we can check for this case)
+  textWidth = xpos_last - xpos_first;
+
+
+  x = pos_.x;
   float y = pos_.y;
 
   // for all characters of the string...
@@ -94,6 +136,7 @@ void Text3D::render(GLuint shaderProgram, float scale) const
 
     // x and y position of the character
     GLfloat xpos = x + tc.bearing.x * scale;
+    if (textWidth > 0.f) { xpos -= (textWidth * 0.5f); }
     GLfloat ypos = y - (tc.dimension.y - tc.bearing.y) * scale;
 
     // width and height of the character

@@ -33,6 +33,9 @@ class Text3D : public Text
 
     glm::mat4 modelMatrix_;
 
+    // to re-upload only after changes
+    mutable bool modelMatrixUpdated = true;
+
     // prepare VAO and VBO for rendering
     void prepare() override;
 };

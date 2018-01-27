@@ -100,7 +100,7 @@ bool TextLoader::load()
 
     // font settings
     FT_Set_Pixel_Sizes(face, font.second.width, font.second.height); // set font width and height (0 = dynamically calculate)
- 
+
     // pre-load the font characters
     loadFontCharacters(font.second);
 

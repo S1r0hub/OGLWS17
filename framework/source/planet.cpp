@@ -52,6 +52,7 @@ float Planet::getOrbitRadius() { return orbitRadius; }
 float* Planet::getOrbitColor() { return orbitColor; }
 
 float* Planet::getColor() { return planetColor; }
+glm::fvec3 Planet::getColorVector() { return glm::fvec3{planetColor[0], planetColor[1], planetColor[2]}; }
 
 float Planet::getOrbitCircumference() { return glm::two_pi<float>() * orbitRadius; }
 

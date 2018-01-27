@@ -73,8 +73,8 @@ class ApplicationSolar : public Application
     // render all the texts
     void renderText() const;
 
-    // render a planets 3D text
-    void renderPlanetText(std::shared_ptr<Planet> planet, glm::fmat4& modelMatrix) const;
+    // render 3D text of planets
+    void renderPlanetTexts(std::shared_ptr<Planet> planet, glm::fvec3& camPos) const;
 
     // uses this shader and remembers the last one
     // returns true if the shader state changed
@@ -85,6 +85,9 @@ class ApplicationSolar : public Application
 
     // to enable/disable specific effects
     void toggleEffect(unsigned char& effectFlags, int effectFlag, std::string name);
+
+    // adds 3D text for the planet (set moons to true to add text for its moons too)
+    void add3DText(std::shared_ptr<Planet> planet, bool moons);
 
 
   protected:
@@ -134,7 +137,7 @@ class ApplicationSolar : public Application
 
     // how fast the camera is moving and rotating in general
     float cameraSpeed = 30.f;
-    float cameraRotationSpeed = 3.f;
+    float cameraRotationSpeed = 2.f;
 
     // store information about the camera rotation around the x-axis
     float cameraRotationX = 0.f;

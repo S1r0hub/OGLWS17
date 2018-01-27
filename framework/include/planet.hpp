@@ -77,9 +77,17 @@ class Planet
     float getOrbitRotationAngle(double timeMultiplier);
     float getOrbitRotationTime();
     float getOrbitRadius();
+
+    // get orbit color as pointer (returns a 3-dimensional array of floats)
     float* getOrbitColor();
+
+    // get planet color as pointer (returns a 3-dimensional array of floats)
     float* getColor();
 
+    // get planet color as a 3-dimensional float vector
+    glm::fvec3 getColorVector();
+
+    // tells whether this planet is a sun
     bool isSun();
 
     std::vector<glm::fvec2> getOrbitPoints();
